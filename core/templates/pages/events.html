@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}События{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">События</span>
+        </nav>
+
+        <div class="section-head-row">
+            <div class="section-header">
+                <span class="eyebrow">events</span>
+                <h1 class="section-title">События кафедры</h1>
+                <p class="section-subtitle">
+                    Конференции, защиты, открытые лекции, олимпиады и встречи.
+                </p>
+            </div>
+
+            {% if can_create %}
+                <a href="#" class="btn btn--primary">+ Добавить событие</a>
+            {% endif %}
+        </div>
+
+        {% if error %}
+            <div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>
+        {% endif %}
+
+        {% if events %}
+            <div class="grid grid--3">
+                {% for event in events %}
+                    <article class="card">
+                        {% if event.image_full_url %}
+                            <div class="card__media">
+                                <img src="{{ event.image_full_url }}" alt="{{ event.title }}">
+                            </div>
+                        {% endif %}
+                        <div class="card__body">
+                            <div class="card__meta">
+                                <span class="badge badge--mint badge--dot">
+                                    {{ event.starts_at|date:"d M Y, H:i" }}
+                                </span>
+                                {% if event.location %}
+                                    <span class="text-muted">📍 {{ event.location }}</span>
+                                {% endif %}
+                            </div>
+                            <h3 class="card__title">{{ event.title }}</h3>
+                            <p class="card__text">{{ event.annotation|default:''|truncatechars:160 }}</p>
+
+                            {% if event.external_link %}
+                                <div class="card__footer">
+                                    <a href="{{ event.external_link }}" class="btn btn--outline btn--sm" target="_blank" rel="noopener">
+                                        Подробнее →
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <h3 class="empty-state__title">Событий пока нет</h3>
+                <p class="empty-state__text">
+                    Здесь будут анонсы конференций, защит и других мероприятий кафедры.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

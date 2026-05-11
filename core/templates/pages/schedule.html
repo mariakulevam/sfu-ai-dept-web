@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Расписание{% endblock %}
+
+{% block extra_head %}
+<style>
+.schedule-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--color-surface-soft);
+    border-radius: var(--radius-md);
+}
+.schedule-grid {
+    display: grid;
+    grid-template-columns: 80px repeat(6, 1fr);
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+.schedule-cell, .schedule-head {
+    background: var(--color-surface);
+    padding: 12px;
+    min-height: 80px;
+}
+.schedule-head {
+    background: var(--color-surface-soft);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    text-align: center;
+    color: var(--color-text-soft);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+.schedule-time {
+    background: var(--color-surface-soft);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 12px 8px;
+}
+.lesson {
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    background: var(--ikit-gradient-soft);
+    border-left: 3px solid var(--color-primary);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.lesson--lab    { border-left-color: var(--color-secondary); background: rgba(76,192,173,0.07); }
+.lesson--exam   { border-left-color: var(--color-warning);   background: rgba(240,162,60,0.07); }
+.lesson__title { font-size: var(--fs-sm); font-weight: 600; line-height: 1.3; }
+.lesson__meta  { font-size: 11px; color: var(--color-text-muted); margin-top: auto; }
+
+@media (max-width: 1024px) {
+    .schedule-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        background: transparent;
+        border: none;
+    }
+    .schedule-head, .schedule-time { display: none; }
+    .schedule-cell {
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Расписание</span>
+        </nav>
+
+        <div class="section-header">
+            <span class="eyebrow">schedule</span>
+            <h1 class="section-title">Расписание занятий</h1>
+            <p class="section-subtitle">Расписание по группе или преподавателю с переключением недель.</p>
+        </div>
+
+        {% if error %}<div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>{% endif %}
+
+        <div class="schedule-toolbar">
+            <div class="field" style="margin: 0; min-width: 220px;">
+                <label class="field__label">Группа</label>
+                <select class="select" name="group">
+                    <option>Все группы</option>
+                    {% for g in groups %}
+                        <option value="{{ g.id }}">{{ g.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field" style="margin: 0;">
+                <label class="field__label">Неделя</label>
+                <div style="display: flex; gap: 4px;">
+                    <a href="?week=odd"  class="btn btn--{% if current_week == 'odd' %}primary{% else %}outline{% endif %} btn--sm">Чётная</a>
+                    <a href="?week=even" class="btn btn--{% if current_week == 'even' %}primary{% else %}outline{% endif %} btn--sm">Нечётная</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="schedule-grid">
+            <div class="schedule-head">Время</div>
+            <div class="schedule-head">Пн</div>
+            <div class="schedule-head">Вт</div>
+            <div class="schedule-head">Ср</div>
+            <div class="schedule-head">Чт</div>
+            <div class="schedule-head">Пт</div>
+            <div class="schedule-head">Сб</div>
+
+            {% for slot in time_slots %}
+                <div class="schedule-time">{{ slot.start }}<br>{{ slot.end }}</div>
+                {% for day in slot.days %}
+                    <div class="schedule-cell">
+                        {% if day.lesson %}
+                            <div class="lesson lesson--{{ day.lesson.type|default:'lecture' }}">
+                                <div class="lesson__title">{{ day.lesson.title }}</div>
+                                <div class="lesson__meta">
+                                    {{ day.lesson.teacher }} • {{ day.lesson.room }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% empty %}
+                <div class="schedule-cell" style="grid-column: 1 / -1; min-height: 200px;">
+                    <div class="empty-state" style="margin: 0; background: transparent;">
+                        <h3 class="empty-state__title">Расписание не загружено</h3>
+                        <p class="empty-state__text">Выберите группу или загрузите расписание.</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

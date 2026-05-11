@@ -1,0 +1,71 @@
+{% load static %}
+<header class="site-header">
+    <div class="container site-header__inner">
+        <a href="{% url 'home' %}" class="brand" aria-label="На главную">
+            <img src="{% static 'img/ikit/sign-color.svg' %}"
+                 alt=""
+                 width="40" height="40"
+                 class="brand__logo">
+            <span class="brand__caption">
+                <span class="brand__caption-top">кафедра&nbsp;<span class="brand__caption-mute">/&nbsp;ИКИТ&nbsp;СФУ</span></span>
+                <span class="brand__caption-main">Системы искусственного интеллекта</span>
+            </span>
+        </a>
+
+        <nav class="site-nav" aria-label="Основная навигация">
+            <a href="{% url 'home' %}"
+               class="site-nav__link {% if request.resolver_match.url_name == 'home' %}site-nav__link--active{% endif %}">
+                Главная
+            </a>
+            <a href="{% url 'about' %}"
+               class="site-nav__link {% if request.resolver_match.url_name == 'about' %}site-nav__link--active{% endif %}">
+                О кафедре
+            </a>
+            <a href="{% url 'staff' %}"
+               class="site-nav__link {% if request.resolver_match.url_name == 'staff' %}site-nav__link--active{% endif %}">
+                Состав
+            </a>
+            <a href="{% url 'announcements' %}"
+               class="site-nav__link {% if request.resolver_match.url_name == 'announcements' or request.resolver_match.url_name == 'announcement_detail' %}site-nav__link--active{% endif %}">
+                Объявления
+            </a>
+            <a href="{% url 'events' %}"
+               class="site-nav__link {% if request.resolver_match.url_name == 'events' %}site-nav__link--active{% endif %}">
+                События
+            </a>
+            <a href="{% url 'documents' %}"
+               class="site-nav__link {% if request.resolver_match.url_name == 'documents' %}site-nav__link--active{% endif %}">
+                Документы
+            </a>
+            {% if request.session.access_token %}
+                <a href="{% url 'schedule' %}"
+                   class="site-nav__link {% if request.resolver_match.url_name == 'schedule' %}site-nav__link--active{% endif %}">
+                    Расписание
+                </a>
+            {% endif %}
+        </nav>
+
+        <div class="site-header__actions">
+            {% if request.session.access_token %}
+                <a href="{% url 'profile' %}" class="user-pill">
+                    <span class="user-pill__avatar">
+                        {{ request.session.user_initial|default:'·' }}
+                    </span>
+                    <span class="user-pill__name">{{ request.session.user_name|default:'Профиль' }}</span>
+                </a>
+                <a href="{% url 'logout' %}" class="btn btn--ghost btn--sm">Выйти</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn--primary btn--sm">Войти</a>
+            {% endif %}
+
+            <button type="button" class="burger" aria-label="Меню" data-burger>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+</header>

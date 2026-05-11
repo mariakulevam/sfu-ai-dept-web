@@ -1,0 +1,272 @@
+/* ============================================================
+   Шапка и футер сайта
+   ============================================================ */
+
+/* ── ШАПКА ──────────────────────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+.site-header__inner {
+  height: var(--header-height);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+/* Брендинг: знак ИКИТ + двухстрочная подпись кафедры */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+.brand__logo {
+  width: 40px;
+  height: 40px;
+  display: block;
+  flex-shrink: 0;
+}
+.brand__caption {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+.brand__caption-top {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+.brand__caption-mute {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+.brand__caption-main {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* Навигация */
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.site-nav__link {
+  position: relative;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--color-text-soft);
+  transition: all var(--duration-fast) var(--ease);
+  white-space: nowrap;
+}
+.site-nav__link:hover {
+  color: var(--color-text);
+  background: var(--color-surface-soft);
+}
+.site-nav__link--active {
+  color: var(--color-primary);
+  background: var(--color-surface-tint);
+}
+
+/* Действия */
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 14px 6px 6px;
+  background: var(--color-surface-soft);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease);
+}
+.user-pill:hover { background: var(--color-surface-tint); color: var(--color-text); }
+.user-pill__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ikit-gradient);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.burger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.burger svg { width: 20px; height: 20px; }
+
+/* ── ФУТЕР ──────────────────────────────────────────────── */
+.site-footer {
+  margin-top: var(--space-12);
+  background: #0F1320;
+  color: rgba(255, 255, 255, 0.86);
+  padding: var(--space-10) 0 var(--space-6);
+  position: relative;
+  overflow: hidden;
+}
+.site-footer::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--ikit-gradient);
+}
+.site-footer__inner {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+  gap: var(--space-8);
+}
+.site-footer__brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 360px;
+}
+/* Логотип в футере: ограничиваем ширину, не растягиваем */
+.site-footer__logo {
+  height: 36px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  object-position: left center;
+}
+.site-footer__about {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-relaxed);
+  color: rgba(255, 255, 255, 0.7);
+}
+.site-footer__col-title {
+  margin: 0 0 var(--space-4);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: rgba(255, 255, 255, 0.95);
+}
+.site-footer__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.site-footer__list a {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: var(--fs-sm);
+  transition: color var(--duration-fast) var(--ease);
+}
+.site-footer__list a:hover { color: var(--color-secondary); }
+
+.site-footer__contact-item {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-relaxed);
+  margin-bottom: var(--space-3);
+}
+.site-footer__contact-item a { color: rgba(255, 255, 255, 0.85); }
+.site-footer__contact-item a:hover { color: var(--color-secondary); }
+.site-footer__contact-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: 2px;
+}
+
+.site-footer__bottom {
+  margin-top: var(--space-9);
+  padding-top: var(--space-5);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--fs-xs);
+  color: rgba(255, 255, 255, 0.5);
+}
+.site-footer__signature {
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── АДАПТИВ ────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .brand__caption { display: none; }
+}
+
+@media (max-width: 1024px) {
+  .site-footer__inner { grid-template-columns: 1fr 1fr; gap: var(--space-7); }
+  .site-footer__brand { grid-column: 1 / -1; max-width: 540px; }
+}
+
+@media (max-width: 768px) {
+  .site-header__inner { grid-template-columns: auto auto; }
+  .site-nav { display: none; }
+  .site-nav--open {
+    display: flex;
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-3);
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    box-shadow: var(--shadow-md);
+  }
+  .site-nav--open .site-nav__link { padding: 12px 16px; }
+  .burger { display: inline-flex; }
+  .site-header__actions .btn--ghost { display: none; }
+
+  .site-footer__inner { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .brand__logo { width: 32px; height: 32px; }
+  .user-pill__name { display: none; }
+}

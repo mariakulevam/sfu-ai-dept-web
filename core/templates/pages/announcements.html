@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Объявления{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Объявления</span>
+        </nav>
+
+        <div class="section-head-row">
+            <div class="section-header">
+                <span class="eyebrow">announcements</span>
+                <h1 class="section-title">Объявления кафедры</h1>
+                <p class="section-subtitle">
+                    Информация для студентов, групп и потоков с возможностью прикрепления материалов.
+                </p>
+            </div>
+
+            {% if can_create %}
+                <a href="{% url 'announcement_new' %}" class="btn btn--primary">
+                    + Создать объявление
+                </a>
+            {% endif %}
+        </div>
+
+        {% if error %}
+            <div class="alert alert--warning" style="margin-bottom: 24px;">
+                <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                </svg>
+                <div>{{ error }}</div>
+            </div>
+        {% endif %}
+
+        <div class="tabs">
+            <a href="?status=" class="tab {% if not current_status %}tab--active{% endif %}">Все</a>
+            <a href="?status=published" class="tab {% if current_status == 'published' %}tab--active{% endif %}">Опубликованные</a>
+            <a href="?status=scheduled" class="tab {% if current_status == 'scheduled' %}tab--active{% endif %}">Запланированные</a>
+            <a href="?status=archived" class="tab {% if current_status == 'archived' %}tab--active{% endif %}">Архив</a>
+        </div>
+
+        {% if announcements %}
+            <div class="grid grid--2">
+                {% for ann in announcements %}
+                    <article class="card">
+                        <div class="card__body">
+                            <div class="card__meta">
+                                {% if ann.status == 'published' %}
+                                    <span class="badge badge--success badge--dot">опубликовано</span>
+                                {% elif ann.status == 'scheduled' %}
+                                    <span class="badge badge--warning badge--dot">запланировано</span>
+                                {% elif ann.status == 'archived' %}
+                                    <span class="badge badge--neutral">архив</span>
+                                {% else %}
+                                    <span class="badge badge--neutral">черновик</span>
+                                {% endif %}
+                                <span class="text-mono text-muted">{{ ann.created_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                            <h3 class="card__title">
+                                <a href="{% url 'announcement_detail' ann.id %}">{{ ann.title }}</a>
+                            </h3>
+                            <p class="card__text">{{ ann.content|truncatechars:200 }}</p>
+
+                            {% if ann.attachments %}
+                                <div class="card__footer">
+                                    <span class="text-muted" style="font-size: 14px;">
+                                        📎 Вложений: {{ ann.attachments|length }}
+                                    </span>
+                                    <a href="{% url 'announcement_detail' ann.id %}"
+                                       class="btn btn--ghost btn--sm">Открыть →</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 11l18-5v12L3 14v-3z"></path>
+                </svg>
+                <h3 class="empty-state__title">Объявлений нет</h3>
+                <p class="empty-state__text">
+                    {% if current_status %}
+                        В этой категории пока пусто. Попробуйте другой фильтр.
+                    {% else %}
+                        Когда появятся новости — они отобразятся здесь.
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

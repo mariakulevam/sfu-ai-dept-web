@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Личный кабинет</span>
+        </nav>
+
+        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 32px; align-items: start;" class="profile-grid">
+            <aside class="card">
+                <div class="card__body" style="text-align: center;">
+                    <div style="width: 96px; height: 96px; border-radius: 50%; background: var(--ikit-gradient); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; margin-bottom: 16px;">
+                        {{ user.initials|default:'?' }}
+                    </div>
+                    <h2 style="font-size: var(--fs-xl); margin-bottom: 4px;">{{ user.full_name|default:'Пользователь' }}</h2>
+                    <p class="text-muted" style="margin-bottom: 16px;">{{ user.role_label|default:'студент' }}</p>
+
+                    <div style="text-align: left; padding-top: 16px; border-top: 1px solid var(--color-border);">
+                        {% if user.email %}
+                            <div style="margin-bottom: 12px;">
+                                <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">E-mail</div>
+                                <div>{{ user.email }}</div>
+                            </div>
+                        {% endif %}
+                        {% if user.group %}
+                            <div style="margin-bottom: 12px;">
+                                <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">Группа</div>
+                                <div>{{ user.group }}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'logout' %}" class="btn btn--outline btn--block" style="margin-top: 20px;">Выйти</a>
+                </div>
+            </aside>
+
+            <div>
+                <div class="grid grid--2" style="margin-bottom: 24px;">
+                    <a href="{% url 'schedule' %}" class="card" style="text-decoration: none; color: inherit;">
+                        <div class="card__body">
+                            <div class="card__meta"><span class="badge badge--blue">сегодня</span></div>
+                            <h3 class="card__title">Расписание</h3>
+                            <p class="card__text">Занятия на сегодня и эту неделю</p>
+                        </div>
+                    </a>
+                    <a href="{% url 'attendance' %}" class="card" style="text-decoration: none; color: inherit;">
+                        <div class="card__body">
+                            <div class="card__meta"><span class="badge badge--mint">статистика</span></div>
+                            <h3 class="card__title">Моя посещаемость</h3>
+                            <p class="card__text">Личная статистика по предметам</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="card">
+                    <div class="card__body">
+                        <h3 style="margin-bottom: 16px;">Последние объявления</h3>
+                        {% if recent_announcements %}
+                            {% for ann in recent_announcements %}
+                                <div style="padding: 12px 0; border-bottom: 1px solid var(--color-border);">
+                                    <a href="{% url 'announcement_detail' ann.id %}" style="font-weight: 600; color: var(--color-text);">{{ ann.title }}</a>
+                                    <div class="text-muted" style="font-size: 13px; margin-top: 4px;">{{ ann.created_at|date:"d.m.Y" }}</div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">Новых объявлений нет</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+@media (max-width: 768px) {
+    .profile-grid { grid-template-columns: 1fr !important; }
+}
+</style>
+{% endblock %}

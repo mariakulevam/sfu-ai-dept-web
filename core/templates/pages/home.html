@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <div class="hero__inner">
+            <div>
+                <span class="eyebrow hero__eyebrow">department portal</span>
+                <h1 class="hero__title">
+                    Информационная среда кафедры<br>
+                    <span class="hero__title-accent">«Системы искусственного интеллекта»</span>
+                </h1>
+                <p class="hero__subtitle">
+                    Цифровая платформа для студентов и преподавателей.
+                    Расписание, посещаемость, объявления, документы и кафедральные
+                    события — всё в одном кабинете.
+                </p>
+                <div class="hero__actions">
+                    {% if request.session.access_token %}
+                        <a href="{% url 'profile' %}" class="btn btn--primary btn--lg">
+                            Перейти в кабинет
+                        </a>
+                        <a href="{% url 'schedule' %}" class="btn btn--outline btn--lg">
+                            Моё расписание
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn--primary btn--lg">
+                            Войти в систему
+                        </a>
+                        <a href="{% url 'about' %}" class="btn btn--outline btn--lg">
+                            О кафедре
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="hero__stats">
+                    <div>
+                        <div class="hero__stat-value">350+</div>
+                        <div class="hero__stat-label">студентов</div>
+                    </div>
+                    <div>
+                        <div class="hero__stat-value">25</div>
+                        <div class="hero__stat-label">преподавателей</div>
+                    </div>
+                    <div>
+                        <div class="hero__stat-value">6</div>
+                        <div class="hero__stat-label">направлений</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero__visual" aria-hidden="true">
+                <div class="hero__visual-bar">
+                    <span class="hero__visual-dot"></span>
+                    <span class="hero__visual-dot"></span>
+                    <span class="hero__visual-dot"></span>
+                    <span class="hero__visual-bar-title">~/ai-department</span>
+                </div>
+                <div class="hero__visual-content">
+                    <span class="hero__visual-line"><span class="c-comment"># кафедра «Системы ИИ» · ИКИТ · СФУ</span></span>
+                    <span class="hero__visual-line"><span class="c-keyword">from</span> ai_department <span class="c-keyword">import</span> SmartCampus</span>
+                    <span class="hero__visual-line"> </span>
+                    <span class="hero__visual-line">campus = <span class="c-fn">SmartCampus</span>(</span>
+                    <span class="hero__visual-line">    students=<span class="c-num">350</span>,</span>
+                    <span class="hero__visual-line">    teachers=<span class="c-num">25</span>,</span>
+                    <span class="hero__visual-line">    motto=<span class="c-string">'Hello, IKIT!'</span>,</span>
+                    <span class="hero__visual-line">)</span>
+                    <span class="hero__visual-line"> </span>
+                    <span class="hero__visual-line">campus.<span class="c-fn">run</span>()</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <span class="eyebrow">key sections</span>
+            <h2 class="section-title">Что есть на портале</h2>
+            <p class="section-subtitle">
+                Шесть основных разделов покрывают повседневные задачи студентов и сотрудников кафедры.
+            </p>
+        </div>
+
+        <div class="feature-grid">
+            <a href="{% url 'announcements' %}" class="feature-card" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 11l18-5v12L3 14v-3z"></path>
+                        <path d="M11.6 16.8a3 3 0 11-5.8-1.6"></path>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Объявления</h3>
+                <p class="feature-card__text">
+                    Актуальная информация для групп, потоков и всей кафедры.
+                    Адресная рассылка с прикреплёнными материалами.
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+
+            <a href="{% url 'events' %}" class="feature-card feature-card--mint" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">События</h3>
+                <p class="feature-card__text">
+                    Конференции, защиты, открытые лекции, олимпиады
+                    и дни открытых дверей кафедры.
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+
+            <a href="{% url 'documents' %}" class="feature-card" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Документы</h3>
+                <p class="feature-card__text">
+                    Приказы, методические указания, темы ВКР, шаблоны и регламенты —
+                    всё с разграничением прав доступа.
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+
+            <a href="{% url 'schedule' %}" class="feature-card feature-card--mint" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Расписание</h3>
+                <p class="feature-card__text">
+                    Расписание занятий по группам и преподавателям.
+                    Чёт/нечёт, переключение по неделям.
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+
+            <a href="{% url 'attendance' %}" class="feature-card" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Посещаемость</h3>
+                <p class="feature-card__text">
+                    QR-коды на занятиях, журнал отметок, персональная статистика
+                    для каждого студента.
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+
+            <a href="{% url 'staff' %}" class="feature-card feature-card--mint" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 010 7.75"></path>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Состав кафедры</h3>
+                <p class="feature-card__text">
+                    Преподавательский состав, должности, читаемые дисциплины
+                    и контактная информация.
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="section section--tinted">
+    <div class="container">
+        <div class="section-head-row">
+            <div class="section-header">
+                <span class="eyebrow">latest news</span>
+                <h2 class="section-title">Последние объявления</h2>
+            </div>
+            <a href="{% url 'announcements' %}" class="btn btn--outline">Все объявления</a>
+        </div>
+
+        {% if announcements %}
+            <div class="grid grid--3">
+                {% for ann in announcements %}
+                    <article class="card">
+                        <div class="card__body">
+                            <div class="card__meta">
+                                <span class="badge badge--blue">{{ ann.status|default:'опубликовано' }}</span>
+                                <span class="text-mono">{{ ann.created_at|date:"d.m.Y" }}</span>
+                            </div>
+                            <h3 class="card__title">
+                                <a href="{% url 'announcement_detail' ann.id %}">{{ ann.title }}</a>
+                            </h3>
+                            <p class="card__text">{{ ann.content|truncatechars:140 }}</p>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 11l18-5v12L3 14v-3z"></path>
+                </svg>
+                <h3 class="empty-state__title">Объявлений пока нет</h3>
+                <p class="empty-state__text">
+                    Когда на кафедре появятся новости, они отобразятся здесь.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-head-row">
+            <div class="section-header">
+                <span class="eyebrow">upcoming events</span>
+                <h2 class="section-title">Ближайшие события</h2>
+            </div>
+            <a href="{% url 'events' %}" class="btn btn--outline">Все события</a>
+        </div>
+
+        {% if events %}
+            <div class="grid grid--3">
+                {% for event in events %}
+                    <article class="card">
+                        {% if event.image_full_url %}
+                            <a href="#" class="card__media">
+                                <img src="{{ event.image_full_url }}" alt="{{ event.title }}">
+                            </a>
+                        {% endif %}
+                        <div class="card__body">
+                            <div class="card__meta">
+                                <span class="badge badge--mint badge--dot">
+                                    {{ event.starts_at|date:"d M, H:i" }}
+                                </span>
+                            </div>
+                            <h3 class="card__title">{{ event.title }}</h3>
+                            <p class="card__text">{{ event.annotation|default:''|truncatechars:120 }}</p>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                </svg>
+                <h3 class="empty-state__title">Событий пока нет</h3>
+                <p class="empty-state__text">
+                    Здесь будут анонсы конференций, защит и открытых лекций.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'auth_base.html' %}
+{% load static %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <aside class="auth-page__visual">
+        <div class="auth-page__visual-top">
+            <a href="{% url 'home' %}" class="auth-page__back">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                на сайт кафедры
+            </a>
+        </div>
+
+        <div class="auth-page__visual-center">
+            <div class="auth-page__brand">
+                <img src="{% static 'img/ikit/logo-h-white.png' %}" alt="ИКИТ СФУ"
+                     width="220" class="auth-page__brand-logo">
+                <div class="auth-page__brand-caption">
+                    Кафедра «Системы искусственного интеллекта»
+                </div>
+            </div>
+
+            <div class="auth-page__quote">
+                <span class="auth-page__quote-mute">// motto</span><br>
+                print('Hello, IKIT!')
+            </div>
+        </div>
+
+        <div class="auth-page__visual-bottom">
+            © Сибирский федеральный университет
+        </div>
+    </aside>
+
+    <main class="auth-page__form-wrap">
+        <form class="auth-form" method="post" novalidate>
+            {% csrf_token %}
+            <h1 class="auth-form__title">Вход в систему</h1>
+            <p class="auth-form__subtitle">
+                Введите учётные данные кафедрального аккаунта
+            </p>
+
+            {% if error %}
+                <div class="alert alert--danger" style="margin-bottom: 20px;">
+                    <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    <div>{{ error }}</div>
+                </div>
+            {% endif %}
+
+            <div class="field">
+                <label class="field__label" for="email">E-mail</label>
+                <input class="input" type="email" id="email" name="email"
+                       value="{{ email|default:'' }}"
+                       placeholder="user@sfu-kras.ru" required autofocus>
+            </div>
+
+            <div class="field">
+                <label class="field__label" for="password">Пароль</label>
+                <input class="input" type="password" id="password" name="password"
+                       placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn--primary btn--block btn--lg" style="margin-top: 12px;">
+                Войти
+            </button>
+
+            <p class="auth-form__hint">
+                Доступ к системе предоставляется деканатом ИКИТ
+            </p>
+        </form>
+    </main>
+</div>
+{% endblock %}

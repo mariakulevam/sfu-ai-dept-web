@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Страница не найдена{% endblock %}
+
+{% block content %}
+<section class="section" style="padding: 96px 0;">
+    <div class="container container--narrow text-center">
+        <div class="text-mono" style="font-size: 120px; font-weight: 700; line-height: 1; background: var(--ikit-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px;">
+            404
+        </div>
+        <h1 style="font-size: var(--fs-2xl); margin-bottom: 12px;">Страница не найдена</h1>
+        <p class="text-soft" style="font-size: var(--fs-md); margin-bottom: 32px;">
+            Возможно, страница была перемещена или вы ввели неправильный адрес.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <a href="{% url 'home' %}" class="btn btn--primary">На главную</a>
+            <a href="{% url 'announcements' %}" class="btn btn--outline">Объявления</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

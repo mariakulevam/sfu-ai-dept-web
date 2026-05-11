@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Документы{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Документы</span>
+        </nav>
+
+        <div class="section-head-row">
+            <div class="section-header">
+                <span class="eyebrow">documents</span>
+                <h1 class="section-title">Документы и материалы</h1>
+                <p class="section-subtitle">
+                    Приказы, методические указания, темы ВКР и шаблоны
+                    с учётом прав доступа.
+                </p>
+            </div>
+
+            {% if can_upload %}
+                <a href="#" class="btn btn--primary">+ Загрузить документ</a>
+            {% endif %}
+        </div>
+
+        {% if error %}
+            <div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>
+        {% endif %}
+
+        <div class="tabs">
+            <a href="?category=" class="tab {% if not current_category %}tab--active{% endif %}">Все</a>
+            <a href="?category=order" class="tab {% if current_category == 'order' %}tab--active{% endif %}">Приказы</a>
+            <a href="?category=method" class="tab {% if current_category == 'method' %}tab--active{% endif %}">Методические</a>
+            <a href="?category=vkr" class="tab {% if current_category == 'vkr' %}tab--active{% endif %}">Темы ВКР</a>
+            <a href="?category=template" class="tab {% if current_category == 'template' %}tab--active{% endif %}">Шаблоны</a>
+        </div>
+
+        {% if documents %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%;">Название</th>
+                            <th>Категория</th>
+                            <th>Загружен</th>
+                            <th>Размер</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 18px;">📄</span>
+                                        <strong>{{ doc.title }}</strong>
+                                    </div>
+                                    {% if doc.description %}
+                                        <div class="text-muted" style="font-size: 13px; margin-top: 4px;">{{ doc.description|truncatechars:100 }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge--neutral">{{ doc.category_label|default:doc.category|default:'—' }}</span>
+                                </td>
+                                <td class="text-muted text-mono">{{ doc.uploaded_at|date:"d.m.Y" }}</td>
+                                <td class="text-muted">{{ doc.size_human|default:'—' }}</td>
+                                <td>
+                                    <a href="{{ doc.download_url }}" class="btn btn--outline btn--sm">
+                                        Скачать
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <h3 class="empty-state__title">Документов нет</h3>
+                <p class="empty-state__text">
+                    {% if current_category %}В этой категории пока пусто.{% else %}Документы появятся после загрузки администратором.{% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

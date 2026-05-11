@@ -1,0 +1,160 @@
+/* ============================================================
+   Дизайн-токены сайта кафедры «Системы искусственного интеллекта»
+   ИКИТ СФУ. Палитра берётся из официального логотипа ИКИТ:
+   - изумрудный #4CC0AD (стрелки знака)
+   - голубой #1C9AD6 (ракета и атом)
+   ============================================================ */
+
+/* Шрифты фирменного стиля ИКИТ */
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../fonts/NotoSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../fonts/NotoSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../fonts/NotoSans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../fonts/NotoSans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../fonts/NotoSans-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('../fonts/Inconsolata-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  /* ── ФИРМЕННАЯ ПАЛИТРА ИКИТ ─────────────────────────────── */
+  /* Точные цвета из SVG логотипа ИКИТ */
+  --ikit-blue: #1C9AD6;          /* основной — голубой ракеты */
+  --ikit-blue-dark: #1684BB;     /* hover-состояние */
+  --ikit-blue-light: #4FB1DD;    /* осветление */
+
+  --ikit-mint: #4CC0AD;          /* изумрудный/мятный — стрелки знака */
+  --ikit-mint-dark: #3BA793;     /* hover-состояние */
+  --ikit-mint-light: #6FCEC0;    /* осветление */
+
+  /* Градиент из брендбука ИКИТ — для hero-блоков и акцентов */
+  --ikit-gradient: linear-gradient(135deg, #535EB3 0%, #479ADA 35%, #58C3AC 100%);
+  --ikit-gradient-soft: linear-gradient(135deg,
+                                        rgba(28, 154, 214, 0.08) 0%,
+                                        rgba(76, 192, 173, 0.08) 100%);
+
+  /* ── СЕМАНТИЧЕСКИЕ ТОКЕНЫ ───────────────────────────────── */
+  --color-primary: var(--ikit-blue);
+  --color-primary-hover: var(--ikit-blue-dark);
+  --color-secondary: var(--ikit-mint);
+  --color-secondary-hover: var(--ikit-mint-dark);
+
+  /* Фон и поверхности */
+  --color-bg: #FFFFFF;            /* основной фон — белый по требованию */
+  --color-surface: #FFFFFF;       /* карточки */
+  --color-surface-soft: #F5F8FB;  /* мягкая подложка для секций */
+  --color-surface-tint: #EFF7FA;  /* тонированная (с лёгким голубым) */
+
+  /* Текст */
+  --color-text: #0F1320;          /* основной — почти чёрный с холодным оттенком */
+  --color-text-soft: #4A5567;     /* вторичный */
+  --color-text-muted: #7A8699;    /* подписи, мета */
+  --color-text-on-color: #FFFFFF; /* на цветной плашке */
+
+  /* Бордеры */
+  --color-border: #E5EBF2;
+  --color-border-strong: #CFD8E3;
+
+  /* Статусы */
+  --color-success: #2DB67E;
+  --color-warning: #F0A23C;
+  --color-danger: #E5484D;
+  --color-info: var(--ikit-blue);
+
+  /* ── ТИПОГРАФИКА ────────────────────────────────────────── */
+  --font-main: 'Noto Sans', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: 'Inconsolata', 'JetBrains Mono', 'Courier New', monospace;
+
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-base: 15px;
+  --fs-md: 16px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+  --fs-2xl: 28px;
+  --fs-3xl: 36px;
+  --fs-4xl: 48px;
+  --fs-5xl: 64px;
+
+  --lh-tight: 1.15;
+  --lh-snug: 1.3;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.65;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+
+  /* ── ОТСТУПЫ И РАЗМЕРЫ ──────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(15, 19, 32, 0.04);
+  --shadow-sm: 0 2px 8px rgba(15, 19, 32, 0.05);
+  --shadow-md: 0 8px 24px rgba(15, 19, 32, 0.08);
+  --shadow-lg: 0 16px 40px rgba(15, 19, 32, 0.10);
+  --shadow-glow-blue: 0 8px 24px rgba(28, 154, 214, 0.25);
+  --shadow-glow-mint: 0 8px 24px rgba(76, 192, 173, 0.25);
+
+  /* Сетка */
+  --container-width: 1240px;
+  --container-narrow: 880px;
+  --header-height: 76px;
+
+  /* Анимация */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 0.15s;
+  --duration-base: 0.25s;
+  --duration-slow: 0.4s;
+
+  /* Z-индексы */
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-modal: 1000;
+  --z-toast: 1100;
+}

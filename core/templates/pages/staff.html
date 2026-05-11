@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Состав кафедры{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs" aria-label="Хлебные крошки">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Состав кафедры</span>
+        </nav>
+
+        <div class="section-header">
+            <span class="eyebrow">staff</span>
+            <h1 class="section-title">Преподавательский состав</h1>
+            <p class="section-subtitle">
+                Профессорско-преподавательский состав кафедры
+                «Системы искусственного интеллекта».
+            </p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert--warning" style="margin-bottom: 24px;">
+                <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div>{{ error }}</div>
+            </div>
+        {% endif %}
+
+        {% if staff %}
+            <div class="staff-grid">
+                {% for person in staff %}
+                    <article class="staff-card">
+                        <div class="staff-card__photo">
+                            {% if person.photo_url %}
+                                <img src="{{ person.photo_url }}" alt="{{ person.full_name }}">
+                            {% else %}
+                                <span class="staff-card__placeholder">{{ person.initials }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="staff-card__body">
+                            <h3 class="staff-card__name">{{ person.full_name }}</h3>
+                            <p class="staff-card__position">{{ person.position_label|default:'Преподаватель' }}</p>
+                            <div class="staff-card__contacts">
+                                {% if person.cabinet %}<span>каб. {{ person.cabinet }}</span>{% endif %}
+                                {% if person.email %}<a href="mailto:{{ person.email }}">{{ person.email }}</a>{% endif %}
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                </svg>
+                <h3 class="empty-state__title">Состав не загружен</h3>
+                <p class="empty-state__text">
+                    Информация о преподавателях появится после
+                    наполнения базы данных кафедры.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
