@@ -1,5 +1,4 @@
 from django.urls import path
-
 from . import views
 
 urlpatterns = [
@@ -15,13 +14,25 @@ urlpatterns = [
 
     # Объявления
     path("announcements/", views.announcements_page, name="announcements"),
-    path("announcements/<int:announcement_id>/", views.announcement_detail_page,
-         name="announcement_detail"),
-    path("announcements/new/", views.announcements_page, name="announcement_new"),
+    path("announcements/new/", views.announcement_create_page, name="announcement_new"),
+    path("announcements/<int:announcement_id>/", views.announcement_detail_page, name="announcement_detail"),
+    path("announcements/<int:announcement_id>/archive/", views.announcement_archive, name="announcement_archive"),
+    path("announcements/<int:announcement_id>/restore/", views.announcement_restore, name="announcement_restore"),
+    path("announcements/<int:announcement_id>/delete/", views.announcement_delete, name="announcement_delete"),
 
-    # Прочие модули
+    # События
     path("events/", views.events_page, name="events"),
+    path("events/new/", views.event_create_page, name="event_new"),
+
+    # Документы и расписание
     path("documents/", views.documents_page, name="documents"),
     path("schedule/", views.schedule_page, name="schedule"),
+
+    # Посещаемость и QR
     path("attendance/", views.attendance_page, name="attendance"),
+    path("attendance/qr/<int:lesson_id>/", views.generate_qr_page, name="attendance_qr"),
+
+    # Чат
+    path("chats/", views.chats_page, name="chats"),
+    path("chats/<int:chat_id>/", views.chat_room_page, name="chat_room"),
 ]

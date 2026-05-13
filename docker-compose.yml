@@ -1,0 +1,22 @@
+# docker-compose для веб-интерфейса кафедры СИИ ИКИТ СФУ
+#
+# Запуск: docker compose up -d --build
+# Остановка: docker compose down
+# Логи: docker compose logs -f web
+
+services:
+  web:
+    build: .
+    container_name: sfu_dept_web
+    restart: unless-stopped
+    ports:
+      # Порт 8001 на хосте → 8000 внутри контейнера
+      # 8000 уже занят бэкендом Риты, поэтому используем 8001
+      - "8001:8000"
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+    volumes:
+      # Для логов и пользовательских загрузок (если будут)
+      - ./staticfiles:/app/staticfiles

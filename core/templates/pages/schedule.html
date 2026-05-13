@@ -4,76 +4,17 @@
 
 {% block extra_head %}
 <style>
-.schedule-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 24px;
-    padding: 16px;
-    background: var(--color-surface-soft);
-    border-radius: var(--radius-md);
-}
-.schedule-grid {
-    display: grid;
-    grid-template-columns: 80px repeat(6, 1fr);
-    gap: 1px;
-    background: var(--color-border);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-}
-.schedule-cell, .schedule-head {
-    background: var(--color-surface);
-    padding: 12px;
-    min-height: 80px;
-}
-.schedule-head {
-    background: var(--color-surface-soft);
-    font-size: var(--fs-sm);
-    font-weight: 600;
-    text-align: center;
-    color: var(--color-text-soft);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
-}
-.schedule-time {
-    background: var(--color-surface-soft);
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    color: var(--color-text-muted);
-    text-align: center;
-    padding: 12px 8px;
-}
-.lesson {
-    padding: 10px;
-    border-radius: var(--radius-sm);
-    background: var(--ikit-gradient-soft);
-    border-left: 3px solid var(--color-primary);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.lesson--lab    { border-left-color: var(--color-secondary); background: rgba(76,192,173,0.07); }
-.lesson--exam   { border-left-color: var(--color-warning);   background: rgba(240,162,60,0.07); }
-.lesson__title { font-size: var(--fs-sm); font-weight: 600; line-height: 1.3; }
-.lesson__meta  { font-size: 11px; color: var(--color-text-muted); margin-top: auto; }
-
-@media (max-width: 1024px) {
-    .schedule-grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
-        background: transparent;
-        border: none;
-    }
-    .schedule-head, .schedule-time { display: none; }
-    .schedule-cell {
-        border-radius: var(--radius-md);
-        border: 1px solid var(--color-border);
-        background: var(--color-surface);
-    }
-}
+.schedule-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; margin-bottom: 24px; padding: 16px; background: var(--color-surface-soft); border-radius: var(--radius-md); }
+.schedule-day { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; }
+.schedule-day__title { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-soft); margin-bottom: 12px; }
+.schedule-day__empty { color: var(--color-text-muted); font-size: 14px; font-style: italic; }
+.lesson-row { display: grid; grid-template-columns: 100px 1fr; gap: 12px; padding: 10px; border-radius: var(--radius-sm); border-left: 3px solid var(--color-primary); background: rgba(28,154,214,0.05); margin-bottom: 8px; }
+.lesson-row.lesson--lab { border-left-color: var(--color-secondary); background: rgba(76,192,173,0.05); }
+.lesson-row.lesson--exam { border-left-color: var(--color-warning); background: rgba(240,162,60,0.05); }
+.lesson-row__time { font-family: var(--font-mono); font-size: 13px; color: var(--color-text-muted); line-height: 1.4; }
+.lesson-row__info { min-width: 0; }
+.lesson-row__subject { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.lesson-row__meta { font-size: 12px; color: var(--color-text-muted); }
 </style>
 {% endblock %}
 
@@ -89,18 +30,20 @@
         <div class="section-header">
             <span class="eyebrow">schedule</span>
             <h1 class="section-title">Расписание занятий</h1>
-            <p class="section-subtitle">Расписание по группе или преподавателю с переключением недель.</p>
+            <p class="section-subtitle">
+                Расписание по группе или преподавателю с переключением между чётной и нечётной неделями.
+            </p>
         </div>
 
-        {% if error %}<div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>{% endif %}
-
-        <div class="schedule-toolbar">
+        <form method="get" class="schedule-toolbar">
             <div class="field" style="margin: 0; min-width: 220px;">
-                <label class="field__label">Группа</label>
-                <select class="select" name="group">
-                    <option>Все группы</option>
+                <label class="field__label" for="group_id">Группа</label>
+                <select class="select" id="group_id" name="group_id" onchange="this.form.submit()">
+                    <option value="">— выберите группу —</option>
                     {% for g in groups %}
-                        <option value="{{ g.id }}">{{ g.name }}</option>
+                        <option value="{{ g.id }}" {% if current_source == 'group:'|add:g.id|stringformat:"s" %}selected{% endif %}>
+                            {{ g.name }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
@@ -108,44 +51,56 @@
             <div class="field" style="margin: 0;">
                 <label class="field__label">Неделя</label>
                 <div style="display: flex; gap: 4px;">
-                    <a href="?week=odd"  class="btn btn--{% if current_week == 'odd' %}primary{% else %}outline{% endif %} btn--sm">Чётная</a>
-                    <a href="?week=even" class="btn btn--{% if current_week == 'even' %}primary{% else %}outline{% endif %} btn--sm">Нечётная</a>
+                    <a href="?{% if current_source %}group_id={{ current_source|cut:'group:' }}&{% endif %}week=1"
+                       class="btn btn--sm {% if current_week == 1 %}btn--primary{% else %}btn--outline{% endif %}">Нечётная</a>
+                    <a href="?{% if current_source %}group_id={{ current_source|cut:'group:' }}&{% endif %}week=2"
+                       class="btn btn--sm {% if current_week == 2 %}btn--primary{% else %}btn--outline{% endif %}">Чётная</a>
                 </div>
             </div>
-        </div>
+        </form>
 
-        <div class="schedule-grid">
-            <div class="schedule-head">Время</div>
-            <div class="schedule-head">Пн</div>
-            <div class="schedule-head">Вт</div>
-            <div class="schedule-head">Ср</div>
-            <div class="schedule-head">Чт</div>
-            <div class="schedule-head">Пт</div>
-            <div class="schedule-head">Сб</div>
+        {% if error %}
+            <div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>
+        {% endif %}
 
-            {% for slot in time_slots %}
-                <div class="schedule-time">{{ slot.start }}<br>{{ slot.end }}</div>
-                {% for day in slot.days %}
-                    <div class="schedule-cell">
-                        {% if day.lesson %}
-                            <div class="lesson lesson--{{ day.lesson.type|default:'lecture' }}">
-                                <div class="lesson__title">{{ day.lesson.title }}</div>
-                                <div class="lesson__meta">
-                                    {{ day.lesson.teacher }} • {{ day.lesson.room }}
+        {% if has_lessons %}
+            {% for day in days_data %}
+                <div class="schedule-day">
+                    <h3 class="schedule-day__title">{{ day.name }}</h3>
+                    {% if day.lessons %}
+                        {% for lesson in day.lessons %}
+                            <div class="lesson-row {% if lesson.lesson_type == 'laboratory' or lesson.lesson_type == 'practice' %}lesson--lab{% elif lesson.lesson_type == 'exam' %}lesson--exam{% endif %}">
+                                <div class="lesson-row__time">
+                                    {{ lesson.time_start }}<br>{{ lesson.time_end }}
+                                </div>
+                                <div class="lesson-row__info">
+                                    <div class="lesson-row__subject">{{ lesson.subject }}</div>
+                                    <div class="lesson-row__meta">
+                                        {% if lesson.teacher_name %}{{ lesson.teacher_name }}{% endif %}
+                                        {% if lesson.room %} · {{ lesson.room }}{% endif %}
+                                        {% if lesson.building %} ({{ lesson.building }}){% endif %}
+                                        {% if lesson.lesson_type %} · {{ lesson.lesson_type }}{% endif %}
+                                    </div>
                                 </div>
                             </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            {% empty %}
-                <div class="schedule-cell" style="grid-column: 1 / -1; min-height: 200px;">
-                    <div class="empty-state" style="margin: 0; background: transparent;">
-                        <h3 class="empty-state__title">Расписание не загружено</h3>
-                        <p class="empty-state__text">Выберите группу или загрузите расписание.</p>
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="schedule-day__empty">Занятий нет</div>
+                    {% endif %}
                 </div>
             {% endfor %}
-        </div>
+        {% else %}
+            <div class="empty-state">
+                <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <h3 class="empty-state__title">Выберите группу или войдите как преподаватель</h3>
+                <p class="empty-state__text">
+                    Расписание отображается для выбранной учебной группы или для авторизованного преподавателя.
+                </p>
+            </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

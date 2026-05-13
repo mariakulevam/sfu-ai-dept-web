@@ -42,6 +42,14 @@
                    class="site-nav__link {% if request.resolver_match.url_name == 'schedule' %}site-nav__link--active{% endif %}">
                     Расписание
                 </a>
+                <a href="{% url 'attendance' %}"
+                   class="site-nav__link {% if request.resolver_match.url_name == 'attendance' %}site-nav__link--active{% endif %}">
+                    Посещаемость
+                </a>
+                <a href="{% url 'chats' %}"
+                   class="site-nav__link {% if request.resolver_match.url_name == 'chats' or request.resolver_match.url_name == 'chat_room' %}site-nav__link--active{% endif %}">
+                    Чаты
+                </a>
             {% endif %}
         </nav>
 
@@ -49,9 +57,9 @@
             {% if request.session.access_token %}
                 <a href="{% url 'profile' %}" class="user-pill">
                     <span class="user-pill__avatar">
-                        {{ request.session.user_initial|default:'·' }}
+                        {{ request.session.user.initials|default:'·' }}
                     </span>
-                    <span class="user-pill__name">{{ request.session.user_name|default:'Профиль' }}</span>
+                    <span class="user-pill__name">{{ request.session.user.short_name|default:'Профиль' }}</span>
                 </a>
                 <a href="{% url 'logout' %}" class="btn btn--ghost btn--sm">Выйти</a>
             {% else %}

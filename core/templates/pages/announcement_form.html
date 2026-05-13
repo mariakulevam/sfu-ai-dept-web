@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ form_title|default:'Новое объявление' }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container container--narrow">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <a href="{% url 'announcements' %}">Объявления</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">{{ form_title|default:'Новое объявление' }}</span>
+        </nav>
+
+        <div class="section-header">
+            <span class="eyebrow">new announcement</span>
+            <h1 class="section-title">{{ form_title|default:'Новое объявление' }}</h1>
+            <p class="section-subtitle">
+                Заполните форму. Объявление можно опубликовать сразу или запланировать на дату.
+            </p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert--danger" style="margin-bottom: 24px;">
+                <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                <div>{{ error }}</div>
+            </div>
+        {% endif %}
+
+        <form method="post" class="card">
+            <div class="card__body">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label class="field__label" for="title">Заголовок <span style="color:var(--color-danger);">*</span></label>
+                    <input class="input" type="text" id="title" name="title" required
+                           value="{{ form.title|default:'' }}" maxlength="500">
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="content">Текст объявления <span style="color:var(--color-danger);">*</span></label>
+                    <textarea class="input" id="content" name="content" rows="8" required>{{ form.content|default:'' }}</textarea>
+                </div>
+
+                <div class="grid grid--2">
+                    <div class="field">
+                        <label class="field__label" for="publish_at">Дата публикации</label>
+                        <input class="input" type="datetime-local" id="publish_at" name="publish_at"
+                               value="{{ form.publish_at|default:'' }}">
+                        <small class="text-muted" style="font-size: 13px;">
+                            Оставьте пустым для немедленной публикации
+                        </small>
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="expires_at">Дата истечения</label>
+                        <input class="input" type="datetime-local" id="expires_at" name="expires_at"
+                               value="{{ form.expires_at|default:'' }}">
+                        <small class="text-muted" style="font-size: 13px;">
+                            После этой даты — в архив
+                        </small>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field__label">Адресовать группам</label>
+                    {% if groups %}
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px; background: var(--color-surface-soft); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto;">
+                            {% for g in groups %}
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" name="group_ids" value="{{ g.id }}">
+                                    <span>{{ g.name }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted" style="font-size: 14px;">Список групп пуст</p>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label class="field__label">Адресовать потокам</label>
+                    {% if streams %}
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; background: var(--color-surface-soft); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto;">
+                            {% for s in streams %}
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" name="stream_ids" value="{{ s.id }}">
+                                    <span>{{ s.name }} ({{ s.year }})</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted" style="font-size: 14px;">Список потоков пуст</p>
+                    {% endif %}
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="submit" class="btn btn--primary btn--lg">
+                        {{ submit_label|default:'Опубликовать' }}
+                    </button>
+                    <a href="{% url 'announcements' %}" class="btn btn--outline btn--lg">Отмена</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}QR-код для отметки{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container container--narrow">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <a href="{% url 'attendance' %}">Посещаемость</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">QR-код занятия №{{ lesson_id }}</span>
+        </nav>
+
+        <div class="section-header text-center">
+            <span class="eyebrow">attendance qr</span>
+            <h1 class="section-title">QR-код для отметки на занятии</h1>
+            <p class="section-subtitle">
+                Покажите этот QR студентам — они отсканируют его через мобильное приложение и отметятся автоматически.
+            </p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert--danger" style="margin-bottom: 24px;">
+                <div>{{ error }}</div>
+            </div>
+        {% endif %}
+
+        {% if not token_data %}
+            <!-- Перед генерацией показываем кнопку -->
+            <div class="card" style="text-align: center;">
+                <div class="card__body" style="padding: 48px 24px;">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5" style="margin: 0 auto 16px;">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <h3 style="margin-bottom: 8px;">Готовы сгенерировать QR-код?</h3>
+                    <p class="text-muted" style="margin-bottom: 24px;">
+                        QR будет действовать 15 минут. После окончания — сгенерируйте новый.
+                    </p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn--primary btn--lg">Сгенерировать QR</button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <!-- Показываем QR -->
+            <div class="card" style="text-align: center;">
+                <div class="card__body" style="padding: 32px 24px;">
+                    <div style="display: inline-block; padding: 24px; background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md);">
+                        <img src="{{ qr_image_url }}" alt="QR-код" style="width: 300px; height: 300px; display: block;">
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <div class="text-muted" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;">Действителен до</div>
+                        <div class="text-mono" style="font-size: 18px; font-weight: 600; margin-top: 4px;">
+                            {{ token_data.expires_at|date:"H:i" }} ({{ token_data.expires_at|date:"d.m.Y" }})
+                        </div>
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn--outline">Обновить QR</button>
+                        </form>
+                        <a href="{% url 'attendance' %}" class="btn btn--ghost">К журналу</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

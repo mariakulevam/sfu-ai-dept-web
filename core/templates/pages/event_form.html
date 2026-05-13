@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Новое событие{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container container--narrow">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <a href="{% url 'events' %}">События</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Новое событие</span>
+        </nav>
+
+        <div class="section-header">
+            <span class="eyebrow">new event</span>
+            <h1 class="section-title">Новое событие</h1>
+            <p class="section-subtitle">
+                Конференция, защита, открытая лекция или дни открытых дверей. Фотографию можно прикрепить после создания.
+            </p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert--danger" style="margin-bottom: 24px;">
+                <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                <div>{{ error }}</div>
+            </div>
+        {% endif %}
+
+        <form method="post" class="card">
+            <div class="card__body">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label class="field__label" for="title">Название события <span style="color:var(--color-danger);">*</span></label>
+                    <input class="input" type="text" id="title" name="title" required
+                           value="{{ form.title|default:'' }}" maxlength="500">
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="annotation">Описание</label>
+                    <textarea class="input" id="annotation" name="annotation" rows="5">{{ form.annotation|default:'' }}</textarea>
+                </div>
+
+                <div class="grid grid--2">
+                    <div class="field">
+                        <label class="field__label" for="starts_at">Дата и время начала <span style="color:var(--color-danger);">*</span></label>
+                        <input class="input" type="datetime-local" id="starts_at" name="starts_at" required
+                               value="{{ form.starts_at|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="ends_at">Дата и время окончания <span style="color:var(--color-danger);">*</span></label>
+                        <input class="input" type="datetime-local" id="ends_at" name="ends_at" required
+                               value="{{ form.ends_at|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="room_id">Аудитория</label>
+                    <select class="select" id="room_id" name="room_id">
+                        <option value="">— не выбрана —</option>
+                        {% for room in rooms %}
+                            <option value="{{ room.id }}" {% if form.room_id == room.id %}selected{% endif %}>
+                                {{ room.number }}{% if room.address %} • {{ room.address }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="submit" class="btn btn--primary btn--lg">Создать событие</button>
+                    <a href="{% url 'events' %}" class="btn btn--outline btn--lg">Отмена</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

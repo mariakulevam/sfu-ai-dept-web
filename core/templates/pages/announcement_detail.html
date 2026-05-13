@@ -10,52 +10,67 @@
             <span class="crumbs__sep">/</span>
             <a href="{% url 'announcements' %}">Объявления</a>
             <span class="crumbs__sep">/</span>
-            <span class="crumbs__current">{{ announcement.title|truncatechars:40 }}</span>
+            <span class="crumbs__current">{{ announcement.title|truncatechars:60 }}</span>
         </nav>
 
         {% if error %}
-            <div class="alert alert--danger">{{ error }}</div>
-        {% else %}
+            <div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>
+        {% endif %}
+
+        {% if announcement.id %}
             <article>
-                <div class="card__meta" style="margin-bottom: 16px;">
-                    {% if announcement.status == 'published' %}
-                        <span class="badge badge--success badge--dot">опубликовано</span>
-                    {% else %}
-                        <span class="badge badge--neutral">{{ announcement.status }}</span>
-                    {% endif %}
-                    <span class="text-mono text-muted">{{ announcement.created_at|date:"d.m.Y H:i" }}</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px;">
+                    <span class="badge badge--{{ announcement.status_badge }} badge--dot">{{ announcement.status_label }}</span>
+                    <span class="text-mono text-muted">
+                        {{ announcement.created_at|date:"d.m.Y H:i" }}
+                    </span>
                 </div>
 
-                <h1 style="font-size: var(--fs-3xl); margin-bottom: 24px;">{{ announcement.title }}</h1>
+                <h1 style="font-size: clamp(28px, 4vw, 40px); margin-bottom: 24px; line-height: 1.2;">
+                    {{ announcement.title }}
+                </h1>
 
-                <div style="font-size: var(--fs-md); line-height: var(--lh-relaxed); color: var(--color-text); margin-bottom: 32px;">
-                    {{ announcement.content|linebreaks }}
-                </div>
-
+                <!-- Адресаты -->
                 {% if announcement.target_groups or announcement.target_streams %}
                     <div class="alert alert--info" style="margin-bottom: 24px;">
                         <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
                         </svg>
                         <div>
                             <strong>Адресовано:</strong>
-                            {% if announcement.target_groups %}группы: {{ announcement.target_groups|join:", " }}{% endif %}
-                            {% if announcement.target_streams %}{% if announcement.target_groups %} • {% endif %}потоки: {{ announcement.target_streams|join:", " }}{% endif %}
+                            {% if announcement.target_groups %}
+                                группы: {% for g in announcement.target_groups %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            {% endif %}
+                            {% if announcement.target_streams %}
+                                {% if announcement.target_groups %}; {% endif %}
+                                потоки: {% for s in announcement.target_streams %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                 {% endif %}
 
+                <!-- Текст -->
+                <div style="font-size: 17px; line-height: 1.7; white-space: pre-wrap; color: var(--color-text); margin-bottom: 32px;">
+                    {{ announcement.content }}
+                </div>
+
+                <!-- Вложения -->
                 {% if announcement.attachments %}
-                    <h3 style="margin-top: 32px;">Прикреплённые материалы</h3>
-                    <div class="grid grid--2">
+                    <h3 style="margin-bottom: 12px;">Прикреплённые файлы</h3>
+                    <div class="grid grid--3" style="margin-bottom: 32px;">
                         {% for att in announcement.attachments %}
-                            <a href="{{ att.url }}" class="card" style="text-decoration: none;">
+                            <a href="{{ att.download_url }}" class="card" style="text-decoration: none; color: inherit;" target="_blank">
                                 <div class="card__body" style="display: flex; align-items: center; gap: 12px;">
-                                    <span style="font-size: 24px;">📎</span>
-                                    <div>
-                                        <div style="font-weight: 600; color: var(--color-text);">{{ att.name }}</div>
-                                        <div class="text-muted" style="font-size: 13px;">{{ att.size_human|default:'' }}</div>
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <div style="min-width: 0;">
+                                        <div style="font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ att.filename|default:'Файл' }}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 12px;">{{ att.size_human }}</div>
                                     </div>
                                 </div>
                             </a>
@@ -63,13 +78,40 @@
                     </div>
                 {% endif %}
 
-                <div style="margin-top: 40px; display: flex; gap: 12px;">
-                    <a href="{% url 'announcements' %}" class="btn btn--outline">← К списку</a>
-                    {% if can_edit %}
-                        <a href="#" class="btn btn--ghost">Редактировать</a>
-                    {% endif %}
-                </div>
+                <!-- Действия для управляющих -->
+                {% if can_manage or is_author %}
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+                        {% if can_manage and announcement.status == 'published' %}
+                            <form method="post" action="{% url 'announcement_archive' announcement.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn--outline">→ В архив</button>
+                            </form>
+                        {% endif %}
+                        {% if can_manage and announcement.status == 'archived' %}
+                            <form method="post" action="{% url 'announcement_restore' announcement.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn--outline">↑ Восстановить</button>
+                            </form>
+                        {% endif %}
+                        {% if can_manage %}
+                            <form method="post" action="{% url 'announcement_delete' announcement.id %}" style="display: inline;"
+                                  onsubmit="return confirm('Удалить объявление? Действие необратимо.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn--outline" style="color: var(--color-danger); border-color: var(--color-danger);">🗑 Удалить</button>
+                            </form>
+                        {% endif %}
+                        <a href="{% url 'announcements' %}" class="btn btn--ghost">← К списку</a>
+                    </div>
+                {% else %}
+                    <a href="{% url 'announcements' %}" class="btn btn--ghost" style="margin-top: 16px;">← К списку</a>
+                {% endif %}
             </article>
+        {% else %}
+            <div class="empty-state">
+                <h3 class="empty-state__title">Объявление не найдено</h3>
+                <p class="empty-state__text">Возможно, оно было удалено или у вас нет доступа.</p>
+                <a href="{% url 'announcements' %}" class="btn btn--primary" style="margin-top: 16px;">К списку объявлений</a>
+            </div>
         {% endif %}
     </div>
 </section>

@@ -15,88 +15,73 @@
             <span class="eyebrow">attendance</span>
             <h1 class="section-title">Учёт посещаемости</h1>
             <p class="section-subtitle">
-                {% if user_role == 'teacher' or user_role == 'admin' %}
-                    Журнал группы, генерация QR-кода для отметки на занятии.
+                {% if user_role == 'student' %}
+                    Ваша персональная статистика посещения занятий.
+                {% elif user_role == 'teacher' or user_role == 'headman' %}
+                    Журнал посещаемости и генерация QR-кодов для отметки на занятиях.
                 {% else %}
-                    Ваша личная статистика по предметам и занятиям.
+                    Журнал посещаемости.
                 {% endif %}
             </p>
         </div>
 
-        {% if error %}<div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>{% endif %}
-
-        <div class="grid grid--3" style="margin-bottom: 32px;">
-            <div class="card">
-                <div class="card__body">
-                    <div class="text-muted" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;">Посещено</div>
-                    <div style="font-size: 36px; font-weight: 800; color: var(--color-success); margin-top: 8px;">
-                        {{ stats.present_percent|default:'—' }}%
-                    </div>
-                    <div class="text-muted" style="font-size: 13px;">{{ stats.present_count|default:0 }} занятий</div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card__body">
-                    <div class="text-muted" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;">Пропущено</div>
-                    <div style="font-size: 36px; font-weight: 800; color: var(--color-danger); margin-top: 8px;">
-                        {{ stats.missed_count|default:0 }}
-                    </div>
-                    <div class="text-muted" style="font-size: 13px;">занятий за семестр</div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card__body">
-                    <div class="text-muted" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;">По уважительной</div>
-                    <div style="font-size: 36px; font-weight: 800; color: var(--color-warning); margin-top: 8px;">
-                        {{ stats.excused_count|default:0 }}
-                    </div>
-                    <div class="text-muted" style="font-size: 13px;">подтверждённые</div>
-                </div>
-            </div>
-        </div>
-
-        {% if can_generate_qr %}
-            <div class="alert alert--info" style="margin-bottom: 32px;">
-                <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <div style="flex: 1;">
-                    <strong>Отметка через QR-код</strong>
-                    <div style="margin-top: 4px;">Сгенерируйте QR на текущее занятие — студенты отсканируют и отметятся автоматически.</div>
-                </div>
-                <a href="#" class="btn btn--primary btn--sm">Создать QR</a>
-            </div>
+        {% if error %}
+            <div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>
         {% endif %}
 
         {% if reports %}
+            <!-- KPI -->
+            <div class="grid grid--3" style="margin-bottom: 32px;">
+                <div class="card">
+                    <div class="card__body">
+                        <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Отмечено посещений</div>
+                        <div style="font-size: 40px; font-weight: 800; color: var(--color-success); margin-top: 8px; line-height: 1;">{{ stats.present_count }}</div>
+                        <div class="text-muted" style="font-size: 13px; margin-top: 6px;">всего в системе</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card__body">
+                        <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Через QR-код</div>
+                        <div style="font-size: 40px; font-weight: 800; color: var(--color-primary); margin-top: 8px; line-height: 1;">
+                            {% with qr=0 %}{% for r in reports %}{% if r.marked_via == 'qr' %}{% with qr=qr|add:1 %}{% endwith %}{% endif %}{% endfor %}{% endwith %}
+                            {{ reports|length }}
+                        </div>
+                        <div class="text-muted" style="font-size: 13px; margin-top: 6px;">автоматических отметок</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card__body">
+                        <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Источник</div>
+                        <div style="font-size: 18px; font-weight: 700; color: var(--color-text); margin-top: 8px; line-height: 1.2;">
+                            {% if user_role == 'student' %}Личная статистика{% else %}Журнал занятия{% endif %}
+                        </div>
+                        <div class="text-muted" style="font-size: 13px; margin-top: 6px;">данные из системы</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Журнал -->
             <div class="table-wrap">
                 <table class="table">
                     <thead>
                         <tr>
                             <th>Дата</th>
-                            <th>Дисциплина</th>
-                            <th>Тип</th>
-                            <th>Преподаватель</th>
-                            <th>Статус</th>
+                            <th>Занятие</th>
+                            <th>Студент</th>
+                            <th>Способ отметки</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for r in reports %}
                             <tr>
-                                <td class="text-mono">{{ r.lesson_date|date:"d.m.Y H:i" }}</td>
-                                <td><strong>{{ r.subject }}</strong></td>
-                                <td class="text-muted">{{ r.lesson_type|default:'—' }}</td>
-                                <td class="text-muted">{{ r.teacher|default:'—' }}</td>
+                                <td class="text-mono">{{ r.created_at|date:"d.m.Y H:i" }}</td>
+                                <td>#{{ r.lesson_id }}</td>
+                                <td>#{{ r.student_id }}</td>
                                 <td>
-                                    {% if r.status == 'present' %}
-                                        <span class="badge badge--success badge--dot">присутствовал</span>
-                                    {% elif r.status == 'absent' %}
-                                        <span class="badge badge--danger badge--dot">отсутствовал</span>
-                                    {% elif r.status == 'excused' %}
-                                        <span class="badge badge--warning badge--dot">уважительная</span>
+                                    {% if r.marked_via == 'qr' %}
+                                        <span class="badge badge--success badge--dot">QR-код</span>
                                     {% else %}
-                                        <span class="badge badge--neutral">{{ r.status }}</span>
+                                        <span class="badge badge--blue badge--dot">вручную</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -107,11 +92,19 @@
         {% else %}
             <div class="empty-state">
                 <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                 </svg>
-                <h3 class="empty-state__title">Записей о посещаемости нет</h3>
-                <p class="empty-state__text">Данные появятся после первых отмеченных занятий.</p>
+                <h3 class="empty-state__title">Отметок пока нет</h3>
+                <p class="empty-state__text">
+                    {% if user_role == 'student' %}
+                        Ваши отметки появятся здесь после первых занятий, когда вы отсканируете QR-код в мобильном приложении.
+                    {% elif can_generate_qr %}
+                        Чтобы начать отмечать студентов, выберите занятие и сгенерируйте QR-код.
+                    {% else %}
+                        Журнал пуст.
+                    {% endif %}
+                </p>
             </div>
         {% endif %}
     </div>

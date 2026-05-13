@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Чаты{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Чаты</span>
+        </nav>
+
+        <div class="section-header">
+            <span class="eyebrow">chats</span>
+            <h1 class="section-title">Мои чаты</h1>
+            <p class="section-subtitle">
+                Групповые чаты учебных групп и личные переписки.
+            </p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>
+        {% endif %}
+
+        {% if chats %}
+            <div class="grid grid--2">
+                {% for chat in chats %}
+                    <a href="{% url 'chat_room' chat.id %}" class="card" style="text-decoration: none; color: inherit;">
+                        <div class="card__body">
+                            <div class="card__meta">
+                                {% if chat.type == 'group' %}
+                                    <span class="badge badge--blue">групповой</span>
+                                {% else %}
+                                    <span class="badge badge--mint">личный</span>
+                                {% endif %}
+                                <span class="text-mono text-muted">#{{ chat.id }}</span>
+                            </div>
+                            <h3 class="card__title">
+                                {% if chat.type == 'group' %}
+                                    Групповой чат
+                                {% else %}
+                                    Личный чат
+                                {% endif %}
+                            </h3>
+                            <p class="card__text">
+                                Участников: {{ chat.members|length }}
+                            </p>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <h3 class="empty-state__title">Чатов пока нет</h3>
+                <p class="empty-state__text">
+                    Групповой чат создаётся вместе с группой. Личные чаты появляются при первом сообщении.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

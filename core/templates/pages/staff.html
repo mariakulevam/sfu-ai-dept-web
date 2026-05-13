@@ -20,7 +20,19 @@
             </p>
         </div>
 
-        {% if error %}
+        {% if require_login %}
+            <div class="alert alert--info" style="margin-bottom: 24px;">
+                <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <div>
+                    {{ error }}
+                    <a href="{% url 'login' %}" style="margin-left: 8px; font-weight: 600;">Войти →</a>
+                </div>
+            </div>
+        {% elif error %}
             <div class="alert alert--warning" style="margin-bottom: 24px;">
                 <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
@@ -44,25 +56,48 @@
                         </div>
                         <div class="staff-card__body">
                             <h3 class="staff-card__name">{{ person.full_name }}</h3>
-                            <p class="staff-card__position">{{ person.position_label|default:'Преподаватель' }}</p>
+                            <p class="staff-card__position">
+                                {% if person.role == 'dean' %}
+                                    Заведующий кафедрой
+                                {% elif person.role == 'deputy_head' %}
+                                    Заместитель заведующего
+                                {% else %}
+                                    {{ person.position_label }}
+                                {% endif %}
+                            </p>
+
+                            {% if person.all_positions and person.all_positions|length > 1 %}
+                                <p class="text-muted" style="font-size: 12px; margin-top: -8px; margin-bottom: 8px;">
+                                    {{ person.all_positions|join:", " }}
+                                </p>
+                            {% endif %}
+
                             <div class="staff-card__contacts">
-                                {% if person.cabinet %}<span>каб. {{ person.cabinet }}</span>{% endif %}
-                                {% if person.email %}<a href="mailto:{{ person.email }}">{{ person.email }}</a>{% endif %}
+                                {% if person.cabinet %}
+                                    <span>каб. {{ person.cabinet }}</span>
+                                {% endif %}
+                                {% if person.phone %}
+                                    <a href="tel:{{ person.phone }}">{{ person.phone }}</a>
+                                {% endif %}
+                                {% if person.email %}
+                                    <a href="mailto:{{ person.email }}">{{ person.email }}</a>
+                                {% endif %}
                             </div>
                         </div>
                     </article>
                 {% endfor %}
             </div>
-        {% else %}
+        {% elif not require_login %}
             <div class="empty-state">
                 <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
-                <h3 class="empty-state__title">Состав не загружен</h3>
+                <h3 class="empty-state__title">Список сотрудников пуст</h3>
                 <p class="empty-state__text">
-                    Информация о преподавателях появится после
-                    наполнения базы данных кафедры.
+                    Информация о составе кафедры будет доступна после её заполнения администратором.
                 </p>
             </div>
         {% endif %}
