@@ -1,0 +1,24 @@
+{% load static %}
+<header class="topbar">
+    <button type="button" class="topbar__burger" id="sidebar-toggle" aria-label="Открыть меню">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <div class="topbar__title">
+        {% block page_title %}{% endblock %}
+    </div>
+
+    <div class="topbar__actions">
+        <a href="{% url 'profile' %}" class="topbar__user">
+            <span class="topbar__user-avatar">
+                {{ request.session.user.initials|default:'·' }}
+            </span>
+            <span class="topbar__user-name">{{ request.session.user.short_name|default:'Профиль' }}</span>
+        </a>
+    </div>
+</header>

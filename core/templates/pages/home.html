@@ -4,72 +4,49 @@
 {% block title %}Главная{% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="hero hero--wide">
     <div class="container">
-        <div class="hero__inner">
-            <div>
-                <span class="eyebrow hero__eyebrow">department portal</span>
-                <h1 class="hero__title">
-                    Информационная среда кафедры<br>
-                    <span class="hero__title-accent">«Системы искусственного интеллекта»</span>
-                </h1>
-                <p class="hero__subtitle">
-                    Цифровая платформа для студентов и преподавателей.
-                    Расписание, посещаемость, объявления, документы и кафедральные
-                    события — всё в одном кабинете.
-                </p>
-                <div class="hero__actions">
-                    {% if request.session.access_token %}
-                        <a href="{% url 'profile' %}" class="btn btn--primary btn--lg">
-                            Перейти в кабинет
-                        </a>
-                        <a href="{% url 'schedule' %}" class="btn btn--outline btn--lg">
-                            Моё расписание
-                        </a>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="btn btn--primary btn--lg">
-                            Войти в систему
-                        </a>
-                        <a href="{% url 'about' %}" class="btn btn--outline btn--lg">
-                            О кафедре
-                        </a>
-                    {% endif %}
-                </div>
-
-                <div class="hero__stats">
-                    <div>
-                        <div class="hero__stat-value">350+</div>
-                        <div class="hero__stat-label">студентов</div>
-                    </div>
-                    <div>
-                        <div class="hero__stat-value">25</div>
-                        <div class="hero__stat-label">преподавателей</div>
-                    </div>
-                    <div>
-                        <div class="hero__stat-value">6</div>
-                        <div class="hero__stat-label">направлений</div>
-                    </div>
-                </div>
+        <div class="hero__center">
+            <span class="eyebrow hero__eyebrow">department portal</span>
+            <h1 class="hero__title">
+                Информационная среда кафедры<br>
+                <span class="hero__title-accent">«Системы искусственного интеллекта»</span>
+            </h1>
+            <p class="hero__subtitle">
+                Цифровая платформа для студентов и преподавателей.
+                Расписание, посещаемость, объявления, документы и кафедральные
+                события — всё в одном кабинете.
+            </p>
+            <div class="hero__actions">
+                {% if request.session.access_token %}
+                    <a href="{% url 'profile' %}" class="btn btn--primary btn--lg">
+                        Перейти в кабинет
+                    </a>
+                    <a href="{% url 'schedule' %}" class="btn btn--outline btn--lg">
+                        Моё расписание
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn--primary btn--lg">
+                        Войти в систему
+                    </a>
+                    <a href="{% url 'about' %}" class="btn btn--outline btn--lg">
+                        О кафедре
+                    </a>
+                {% endif %}
             </div>
 
-            <div class="hero__visual" aria-hidden="true">
-                <div class="hero__visual-bar">
-                    <span class="hero__visual-dot"></span>
-                    <span class="hero__visual-dot"></span>
-                    <span class="hero__visual-dot"></span>
-                    <span class="hero__visual-bar-title">~/ai-department</span>
+            <div class="hero__stats">
+                <div>
+                    <div class="hero__stat-value">350+</div>
+                    <div class="hero__stat-label">студентов</div>
                 </div>
-                <div class="hero__visual-content">
-                    <span class="hero__visual-line"><span class="c-comment"># кафедра «Системы ИИ» · ИКИТ · СФУ</span></span>
-                    <span class="hero__visual-line"><span class="c-keyword">from</span> ai_department <span class="c-keyword">import</span> SmartCampus</span>
-                    <span class="hero__visual-line"> </span>
-                    <span class="hero__visual-line">campus = <span class="c-fn">SmartCampus</span>(</span>
-                    <span class="hero__visual-line">    students=<span class="c-num">350</span>,</span>
-                    <span class="hero__visual-line">    teachers=<span class="c-num">25</span>,</span>
-                    <span class="hero__visual-line">    motto=<span class="c-string">'Hello, IKIT!'</span>,</span>
-                    <span class="hero__visual-line">)</span>
-                    <span class="hero__visual-line"> </span>
-                    <span class="hero__visual-line">campus.<span class="c-fn">run</span>()</span>
+                <div>
+                    <div class="hero__stat-value">25</div>
+                    <div class="hero__stat-label">преподавателей</div>
+                </div>
+                <div>
+                    <div class="hero__stat-value">6</div>
+                    <div class="hero__stat-label">направлений</div>
                 </div>
             </div>
         </div>
@@ -202,13 +179,12 @@
                     <article class="card">
                         <div class="card__body">
                             <div class="card__meta">
-                                <span class="badge badge--blue">{{ ann.status|default:'опубликовано' }}</span>
-                                <span class="text-mono">{{ ann.created_at|date:"d.m.Y" }}</span>
+                                <span class="text-mono text-muted">{{ ann.created_at|date:"d.m.Y" }}</span>
                             </div>
                             <h3 class="card__title">
                                 <a href="{% url 'announcement_detail' ann.id %}">{{ ann.title }}</a>
                             </h3>
-                            <p class="card__text">{{ ann.content|truncatechars:140 }}</p>
+                            <p class="card__text">{{ ann.content|truncatewords:20 }}</p>
                         </div>
                     </article>
                 {% endfor %}
@@ -242,18 +218,19 @@
                 {% for event in events %}
                     <article class="card">
                         {% if event.image_full_url %}
-                            <a href="#" class="card__media">
-                                <img src="{{ event.image_full_url }}" alt="{{ event.title }}">
-                            </a>
+                            <div style="aspect-ratio: 16/9; overflow: hidden; background: var(--color-surface-soft);">
+                                <img src="{{ event.image_full_url }}" alt="{{ event.title }}"
+                                     style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
                         {% endif %}
                         <div class="card__body">
                             <div class="card__meta">
-                                <span class="badge badge--mint badge--dot">
-                                    {{ event.starts_at|date:"d M, H:i" }}
-                                </span>
+                                <span class="text-mono text-muted">{{ event.starts_at|date:"d.m.Y H:i" }}</span>
                             </div>
                             <h3 class="card__title">{{ event.title }}</h3>
-                            <p class="card__text">{{ event.annotation|default:''|truncatechars:120 }}</p>
+                            {% if event.annotation %}
+                                <p class="card__text">{{ event.annotation|truncatewords:20 }}</p>
+                            {% endif %}
                         </div>
                     </article>
                 {% endfor %}

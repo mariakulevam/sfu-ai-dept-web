@@ -17,16 +17,34 @@
 
     {% block extra_head %}{% endblock %}
 </head>
-<body>
-<div class="page-shell">
-    {% include 'includes/header.html' %}
+<body class="{% if request.session.access_token %}has-sidebar{% endif %}">
+{% if request.session.access_token %}
+    {# === ВАРИАНТ С SIDEBAR — для авторизованных === #}
+    <div class="app-shell">
+        {% include 'includes/sidebar.html' %}
 
-    <main class="page-content">
-        {% block content %}{% endblock %}
-    </main>
+        <div class="app-shell__main">
+            {% include 'includes/topbar.html' %}
 
-    {% include 'includes/footer.html' %}
-</div>
+            <main class="app-shell__content">
+                {% block content %}{% endblock %}
+            </main>
+
+            {% include 'includes/footer.html' %}
+        </div>
+    </div>
+{% else %}
+    {# === ВАРИАНТ С ОБЫЧНОЙ ШАПКОЙ — для гостей === #}
+    <div class="page-shell">
+        {% include 'includes/header.html' %}
+
+        <main class="page-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        {% include 'includes/footer.html' %}
+    </div>
+{% endif %}
 
 <script src="{% static 'js/app.js' %}" defer></script>
 {% block extra_scripts %}{% endblock %}

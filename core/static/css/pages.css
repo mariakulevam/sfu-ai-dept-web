@@ -526,3 +526,37 @@
   .hero__stat-value { font-size: var(--fs-2xl); }
   .section-head-row { flex-direction: column; align-items: flex-start; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   Hero — широкая раскладка (после убирания терминала)
+   ═══════════════════════════════════════════════════════════ */
+
+.hero--wide .hero__center {
+  max-width: 880px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero--wide .hero__title {
+  font-size: clamp(36px, 5.5vw, 64px);
+  line-height: 1.05;
+  margin-bottom: 24px;
+}
+
+.hero--wide .hero__subtitle {
+  max-width: 640px;
+  margin: 0 auto 32px;
+  font-size: 17px;
+}
+
+.hero--wide .hero__actions {
+  justify-content: center;
+}
+
+.hero--wide .hero__stats {
+  justify-content: center;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
