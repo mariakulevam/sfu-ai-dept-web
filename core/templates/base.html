@@ -18,6 +18,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="{% if request.session.access_token %}has-sidebar{% endif %}">
+
 {% if request.session.access_token %}
     {# === ВАРИАНТ С SIDEBAR — для авторизованных === #}
     <div class="app-shell">
@@ -27,19 +28,23 @@
             {% include 'includes/topbar.html' %}
 
             <main class="app-shell__content">
-                {% block content %}{% endblock %}
-            </main>
-
-            {% include 'includes/footer.html' %}
-        </div>
-    </div>
 {% else %}
     {# === ВАРИАНТ С ОБЫЧНОЙ ШАПКОЙ — для гостей === #}
     <div class="page-shell">
         {% include 'includes/header.html' %}
 
         <main class="page-content">
+{% endif %}
+
             {% block content %}{% endblock %}
+
+{% if request.session.access_token %}
+            </main>
+
+            {% include 'includes/footer.html' %}
+        </div>
+    </div>
+{% else %}
         </main>
 
         {% include 'includes/footer.html' %}
