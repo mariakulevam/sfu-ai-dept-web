@@ -272,6 +272,7 @@
 }
 
 
+
 /* ═══════════════════════════════════════════════════════════
    SIDEBAR + TOPBAR — раскладка для авторизованных
    ═══════════════════════════════════════════════════════════ */
@@ -282,6 +283,12 @@ body.has-sidebar { background: var(--color-surface-tint); }
   display: grid;
   grid-template-columns: 260px 1fr;
   min-height: 100vh;
+  transition: grid-template-columns 0.22s var(--ease);
+}
+
+/* COLLAPSED-режим — sidebar 68px шириной */
+body.sidebar-collapsed .app-shell {
+  grid-template-columns: 68px 1fr;
 }
 
 .app-shell__main {
@@ -291,10 +298,7 @@ body.has-sidebar { background: var(--color-surface-tint); }
   background: var(--color-surface-tint);
 }
 
-.app-shell__content {
-  flex: 1;
-  min-width: 0;
-}
+.app-shell__content { flex: 1; min-width: 0; }
 
 /* ── SIDEBAR ──────────────────────────────────────────────── */
 
@@ -304,26 +308,40 @@ body.has-sidebar { background: var(--color-surface-tint); }
   height: 100vh;
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);
-  overflow-y: auto;
+  overflow: hidden;
   z-index: 30;
+  transition: width 0.22s var(--ease);
 }
 
 .sidebar__inner {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  padding: 20px 14px;
+  height: 100%;
+  padding: 16px 14px 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Шапка sidebar с кнопкой collapse */
+.sidebar__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 16px 6px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 16px;
+  position: relative;
 }
 
 .sidebar__brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 10px 18px;
   text-decoration: none;
   color: var(--color-text);
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 16px;
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar__brand-logo { flex-shrink: 0; }
@@ -333,6 +351,9 @@ body.has-sidebar { background: var(--color-surface-tint); }
   flex-direction: column;
   line-height: 1.2;
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.15s var(--ease);
 }
 
 .sidebar__brand-mute {
@@ -349,6 +370,32 @@ body.has-sidebar { background: var(--color-surface-tint); }
   color: var(--color-text);
 }
 
+.sidebar__collapse {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease), transform 0.22s var(--ease);
+}
+
+.sidebar__collapse:hover {
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+}
+
+.sidebar__collapse svg { width: 16px; height: 16px; }
+
+body.sidebar-collapsed .sidebar__collapse svg {
+  transform: rotate(180deg);
+}
+
 .sidebar__nav {
   display: flex;
   flex-direction: column;
@@ -363,9 +410,11 @@ body.has-sidebar { background: var(--color-surface-tint); }
   color: var(--color-text-muted);
   font-weight: 600;
   padding: 14px 12px 6px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.sidebar__group-title:first-child { padding-top: 0; }
+.sidebar__group-title:first-of-type { padding-top: 0; }
 
 .sidebar__link {
   display: flex;
@@ -378,6 +427,8 @@ body.has-sidebar { background: var(--color-surface-tint); }
   font-size: 14px;
   font-weight: 500;
   transition: background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .sidebar__link svg {
@@ -403,7 +454,7 @@ body.has-sidebar { background: var(--color-surface-tint); }
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px;
+  padding: 10px 6px;
   margin-top: 16px;
   border-top: 1px solid var(--color-border);
 }
@@ -419,6 +470,7 @@ body.has-sidebar { background: var(--color-surface-tint); }
   padding: 6px;
   border-radius: var(--radius-md);
   transition: background var(--duration-fast) var(--ease);
+  overflow: hidden;
 }
 
 .sidebar__user:hover { background: var(--color-surface-soft); }
@@ -435,6 +487,20 @@ body.has-sidebar { background: var(--color-surface-tint); }
   font-size: 13px;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.sidebar__user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.sidebar__user-avatar.has-photo .sidebar__user-initials {
+  display: none;
 }
 
 .sidebar__user-info {
@@ -466,6 +532,7 @@ body.has-sidebar { background: var(--color-surface-tint); }
   height: 36px;
   border-radius: var(--radius-md);
   color: var(--color-text-muted);
+  flex-shrink: 0;
   transition: background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
 }
 
@@ -475,6 +542,44 @@ body.has-sidebar { background: var(--color-surface-tint); }
 }
 
 .sidebar__logout svg { width: 18px; height: 18px; }
+
+/* ── COLLAPSED-режим — только иконки ──────────────────────── */
+
+body.sidebar-collapsed .sidebar__brand-text,
+body.sidebar-collapsed .sidebar__group-title,
+body.sidebar-collapsed .sidebar__link span,
+body.sidebar-collapsed .sidebar__user-info,
+body.sidebar-collapsed .sidebar__logout {
+  display: none;
+}
+
+body.sidebar-collapsed .sidebar__inner {
+  padding: 16px 8px 14px;
+}
+
+body.sidebar-collapsed .sidebar__head {
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body.sidebar-collapsed .sidebar__link {
+  justify-content: center;
+  padding: 10px;
+}
+
+body.sidebar-collapsed .sidebar__group-title { padding: 8px 0 4px; }
+
+body.sidebar-collapsed .sidebar__footer {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+body.sidebar-collapsed .sidebar__user {
+  padding: 4px;
+  justify-content: center;
+}
 
 /* ── TOPBAR ───────────────────────────────────────────────── */
 
@@ -492,7 +597,6 @@ body.has-sidebar { background: var(--color-surface-tint); }
 }
 
 .topbar__burger {
-  display: none;
   background: none;
   border: none;
   width: 36px;
@@ -500,6 +604,7 @@ body.has-sidebar { background: var(--color-surface-tint); }
   border-radius: var(--radius-sm);
   color: var(--color-text);
   cursor: pointer;
+  display: none;
   align-items: center;
   justify-content: center;
 }
@@ -545,12 +650,20 @@ body.has-sidebar { background: var(--color-surface-tint); }
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
 }
 
-.topbar__user-name {
-  font-size: 13px;
-  font-weight: 500;
+.topbar__user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
+
+.topbar__user-avatar.has-photo .topbar__user-initials { display: none; }
+
+.topbar__user-name { font-size: 13px; font-weight: 500; }
 
 /* ── Overlay для мобильной версии ─────────────────────────── */
 
@@ -569,7 +682,8 @@ body.has-sidebar { background: var(--color-surface-tint); }
 /* ── Адаптив ─────────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
-  .app-shell { grid-template-columns: 1fr; }
+  .app-shell,
+  body.sidebar-collapsed .app-shell { grid-template-columns: 1fr; }
 
   .sidebar {
     position: fixed;
@@ -581,9 +695,19 @@ body.has-sidebar { background: var(--color-surface-tint); }
     box-shadow: 0 20px 50px rgba(15, 19, 32, 0.15);
   }
 
-  .sidebar.is-open { transform: translateX(0); }
+  body.sidebar-collapsed .sidebar { width: 280px; }
+  body.sidebar-collapsed .sidebar__brand-text,
+  body.sidebar-collapsed .sidebar__group-title,
+  body.sidebar-collapsed .sidebar__link span,
+  body.sidebar-collapsed .sidebar__user-info,
+  body.sidebar-collapsed .sidebar__logout { display: flex; }
+  body.sidebar-collapsed .sidebar__link { justify-content: flex-start; }
+  body.sidebar-collapsed .sidebar__head { flex-direction: row; }
 
+  .sidebar.is-open { transform: translateX(0); }
   .topbar__burger { display: inline-flex; }
+
+  .sidebar__collapse { display: none; }
 }
 
 @media (max-width: 640px) {

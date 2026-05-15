@@ -15,9 +15,18 @@
             <!-- Левая колонка: профиль -->
             <aside class="card">
                 <div class="card__body" style="text-align: center;">
-                    <div style="width: 96px; height: 96px; border-radius: 50%; background: var(--ikit-gradient); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; margin-bottom: 16px;">
-                        {{ user.initials|default:'?' }}
+                    <div class="profile-avatar" style="width: 96px; height: 96px; border-radius: 50%; background: var(--ikit-gradient); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; margin-bottom: 16px; position: relative; background-size: cover; background-position: center; overflow: hidden;">
+                        <span class="profile-avatar__initials">{{ user.initials|default:'?' }}</span>
                     </div>
+
+                    <div style="margin-bottom: 16px; display: flex; gap: 8px; justify-content: center;">
+                        <label class="btn btn--ghost btn--sm" style="cursor: pointer; margin: 0;">
+                            <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                            Загрузить фото
+                        </label>
+                        <button type="button" id="avatar-remove" class="btn btn--ghost btn--sm">Удалить</button>
+                    </div>
+
                     <h2 style="font-size: var(--fs-xl); margin-bottom: 4px;">{{ user.full_name|default:'Пользователь' }}</h2>
                     <p class="text-muted" style="margin-bottom: 16px;">{{ user.role_label|default:'' }}</p>
 
@@ -26,12 +35,6 @@
                             <div style="margin-bottom: 12px;">
                                 <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">E-mail</div>
                                 <div>{{ user.email }}</div>
-                            </div>
-                        {% endif %}
-                        {% if user.id %}
-                            <div style="margin-bottom: 12px;">
-                                <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">ID</div>
-                                <div>{{ user.id }}</div>
                             </div>
                         {% endif %}
                     </div>

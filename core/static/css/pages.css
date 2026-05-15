@@ -539,15 +539,16 @@
 }
 
 .hero--wide .hero__title {
-  font-size: clamp(36px, 5.5vw, 64px);
-  line-height: 1.05;
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.1;
   margin-bottom: 24px;
 }
 
 .hero--wide .hero__subtitle {
   max-width: 640px;
   margin: 0 auto 32px;
-  font-size: 17px;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 .hero--wide .hero__actions {
@@ -636,4 +637,10 @@
 @media (max-width: 900px) {
   .contact-block { grid-template-columns: 1fr; }
   .contact-block__map { min-height: 320px; }
+}
+
+
+/* ── Аватар на странице профиля ─────────────────────────── */
+.profile-avatar.has-photo .profile-avatar__initials {
+  display: none;
 }

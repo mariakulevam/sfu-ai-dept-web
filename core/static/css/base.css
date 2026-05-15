@@ -130,10 +130,6 @@ h5 { font-size: var(--fs-lg); }
   color: var(--color-primary);
   letter-spacing: 0;
 }
-.eyebrow::before {
-  content: '//';
-  color: var(--color-secondary);
-}
 
 .visually-hidden {
   position: absolute;
