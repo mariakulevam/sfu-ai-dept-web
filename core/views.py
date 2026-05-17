@@ -214,6 +214,59 @@ def logout_page(request):
     return redirect("login")
 
 
+def register_page(request):
+    """Регистрация нового пользователя (роль автоматически student)."""
+    if _get_token(request):
+        return redirect("home")
+
+    error: Optional[str] = None
+    form_data = {"name": "", "surname": "", "patronymic": "", "email": ""}
+
+    if request.method == "POST":
+        form_data["name"] = request.POST.get("name", "").strip()
+        form_data["surname"] = request.POST.get("surname", "").strip()
+        form_data["patronymic"] = request.POST.get("patronymic", "").strip()
+        form_data["email"] = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        confirm = request.POST.get("confirm_password", "")
+
+        if not form_data["name"] or not form_data["surname"]:
+            error = "Заполните имя и фамилию."
+        elif not form_data["email"]:
+            error = "Укажите e-mail."
+        elif not password:
+            error = "Придумайте пароль."
+        elif len(password) < 6:
+            error = "Пароль должен быть не короче 6 символов."
+        elif password != confirm:
+            error = "Пароль и подтверждение не совпадают."
+        else:
+            _, err = _safe_call(
+                api.register_user,
+                form_data["name"],
+                form_data["surname"],
+                form_data["email"],
+                password,
+                patronymic=form_data["patronymic"] or None,
+            )
+            if err:
+                error = err
+            else:
+                # Регистрация прошла — сразу логиним пользователя
+                tokens, login_err = _safe_call(api.login_user, form_data["email"], password)
+                if tokens:
+                    request.session["access_token"] = tokens["access_token"]
+                    request.session["refresh_token"] = tokens.get("refresh_token", "")
+                    user, _ = _safe_call(api.get_current_user, tokens["access_token"])
+                    if user:
+                        _set_session_user(request, user)
+                    return redirect("home")
+                # Если автологин не сработал — отправляем на форму входа
+                return redirect("login")
+
+    return render(request, "pages/register.html", {"error": error, "form": form_data})
+
+
 @login_required_view
 def profile_page(request):
     """Личный кабинет — профиль + смена пароля."""

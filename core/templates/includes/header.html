@@ -63,6 +63,7 @@
                 </a>
                 <a href="{% url 'logout' %}" class="btn btn--ghost btn--sm">Выйти</a>
             {% else %}
+                <a href="{% url 'register' %}" class="btn btn--ghost btn--sm">Регистрация</a>
                 <a href="{% url 'login' %}" class="btn btn--primary btn--sm">Войти</a>
             {% endif %}
 

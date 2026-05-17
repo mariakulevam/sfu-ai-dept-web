@@ -1,7 +1,7 @@
 {% extends 'auth_base.html' %}
 {% load static %}
 
-{% block title %}Вход{% endblock %}
+{% block title %}Регистрация{% endblock %}
 
 {% block content %}
 <div class="auth-page">
@@ -39,9 +39,9 @@
     <main class="auth-page__form-wrap">
         <form class="auth-form" method="post" novalidate>
             {% csrf_token %}
-            <h1 class="auth-form__title">Вход в систему</h1>
+            <h1 class="auth-form__title">Регистрация</h1>
             <p class="auth-form__subtitle">
-                Введите учётные данные кафедрального аккаунта
+                Создание учётной записи студента кафедры
             </p>
 
             {% if error %}
@@ -56,24 +56,51 @@
             {% endif %}
 
             <div class="field">
+                <label class="field__label" for="surname">Фамилия</label>
+                <input class="input" type="text" id="surname" name="surname"
+                       value="{{ form.surname|default:'' }}"
+                       placeholder="Иванова" required autofocus>
+            </div>
+
+            <div class="field">
+                <label class="field__label" for="name">Имя</label>
+                <input class="input" type="text" id="name" name="name"
+                       value="{{ form.name|default:'' }}"
+                       placeholder="Мария" required>
+            </div>
+
+            <div class="field">
+                <label class="field__label" for="patronymic">Отчество <span style="color: var(--color-text-muted); font-weight: 400;">(необязательно)</span></label>
+                <input class="input" type="text" id="patronymic" name="patronymic"
+                       value="{{ form.patronymic|default:'' }}"
+                       placeholder="Петровна">
+            </div>
+
+            <div class="field">
                 <label class="field__label" for="email">E-mail</label>
                 <input class="input" type="email" id="email" name="email"
-                       value="{{ email|default:'' }}"
-                       placeholder="user@sfu-kras.ru" required autofocus>
+                       value="{{ form.email|default:'' }}"
+                       placeholder="user@sfu-kras.ru" required>
             </div>
 
             <div class="field">
                 <label class="field__label" for="password">Пароль</label>
                 <input class="input" type="password" id="password" name="password"
+                       placeholder="не короче 6 символов" required>
+            </div>
+
+            <div class="field">
+                <label class="field__label" for="confirm_password">Повторите пароль</label>
+                <input class="input" type="password" id="confirm_password" name="confirm_password"
                        placeholder="••••••••" required>
             </div>
 
             <button type="submit" class="btn btn--primary btn--block btn--lg" style="margin-top: 12px;">
-                Войти
+                Создать аккаунт
             </button>
 
             <p class="auth-form__hint">
-                Нет учётной записи? <a href="{% url 'register' %}">Зарегистрироваться</a>
+                Уже есть учётная запись? <a href="{% url 'login' %}">Войти</a>
             </p>
         </form>
     </main>
