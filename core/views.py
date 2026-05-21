@@ -78,12 +78,72 @@ def login_required_view(view_func: Callable) -> Callable:
     return wrapped
 
 
-def _safe_call(fn: Callable, *args, **kwargs):
-    """Безопасный вызов API: возвращает (data, error_message)."""
+def _refresh_access_token(request) -> Optional[str]:
+    """Пытается обновить access-токен через refresh. Возвращает новый токен или None."""
+    refresh = request.session.get("refresh_token")
+    if not refresh:
+        return None
     try:
-        return fn(*args, **kwargs), None
+        tokens = api.refresh_tokens(refresh)
+    except Exception:
+        return None
+    new_access = tokens.get("access_token")
+    new_refresh = tokens.get("refresh_token")
+    if new_access:
+        request.session["access_token"] = new_access
+        if new_refresh:
+            request.session["refresh_token"] = new_refresh
+        request.session.modified = True
+        return new_access
+    return None
+
+
+def _safe_call(request_or_fn, *args, **kwargs):
+    """Безопасный вызов API: возвращает (data, error_message).
+
+    Поддерживает два режима:
+      _safe_call(request, api.func, ...)            — старый стиль, без авто-рефреша
+      _safe_call(request, api.func, token, ...) — с авто-рефрешем токена при 401
+
+    Авто-рефреш срабатывает если первым аргументом передан request (имеет .session).
+    """
+    # Определяем режим
+    if hasattr(request_or_fn, "session"):
+        request = request_or_fn
+        fn = args[0]
+        call_args = list(args[1:])
+    else:
+        request = None
+        fn = request_or_fn
+        call_args = list(args)
+
+    try:
+        return fn(*call_args, **kwargs), None
     except requests.RequestException:
         return None, "Не удалось подключиться к серверу. Попробуйте позже."
+    except api.TokenExpiredError as exc:
+        # Пытаемся обновить токен и повторить — только если есть request
+        if request is not None:
+            old_token = request.session.get("access_token")
+            new_token = _refresh_access_token(request)
+            if new_token:
+                # Подменяем старый access-токен на новый в аргументах вызова
+                new_args = [
+                    new_token if (isinstance(a, str) and a == old_token) else a
+                    for a in call_args
+                ]
+                # Если совпадения не нашлось — заменяем первый строковый аргумент
+                if new_args == call_args and call_args and isinstance(call_args[0], str):
+                    new_args[0] = new_token
+                try:
+                    return fn(*new_args, **kwargs), None
+                except requests.RequestException:
+                    return None, "Не удалось подключиться к серверу. Попробуйте позже."
+                except api.TokenExpiredError:
+                    return None, "Сессия истекла. Войдите заново."
+                except RuntimeError as exc2:
+                    return None, str(exc2)
+        return None, str(exc)
     except RuntimeError as exc:
         return None, str(exc)
 
@@ -108,10 +168,10 @@ def home_page(request):
 
     # Авторизованный — показываем актуальные данные из API
     if token:
-        anns, _ = _safe_call(api.list_announcements, token, status="published", limit=3)
+        anns, _ = _safe_call(request, api.list_announcements, token, status="published", limit=3)
         announcements = anns or []
 
-        events_data, _ = _safe_call(api.list_events, token)
+        events_data, _ = _safe_call(request, api.list_events, token)
         events = [_make_image_full_url(e) for e in (events_data or [])[:3]]
 
     return render(request, "pages/home.html", {
@@ -159,7 +219,7 @@ def manage_staff_page(request):
                 form_error = "Недопустимая роль"
             else:
                 _, err = _safe_call(
-                    api.admin_create_user, token,
+                    request, api.admin_create_user, token,
                     name, surname, email, role,
                     patronymic=patronymic or None,
                 )
@@ -175,14 +235,14 @@ def manage_staff_page(request):
         elif action == "delete_staff":
             user_id = request.POST.get("user_id")
             if user_id and user_id.isdigit():
-                _, err = _safe_call(api.delete_user, token, int(user_id))
+                _, err = _safe_call(request, api.delete_user, token, int(user_id))
                 if err:
                     form_error = err
                 else:
                     form_success = "Сотрудник удалён"
 
     # Текущий список сотрудников
-    users_data, error = _safe_call(api.list_users, token, limit=200)
+    users_data, error = _safe_call(request, api.list_users, token, limit=200)
     staff = []
     for u in users_data or []:
         role = u.get("role")
@@ -213,7 +273,7 @@ def staff_page(request):
             "require_login": True,
         })
 
-    users_data, error = _safe_call(api.list_users, token, limit=200)
+    users_data, error = _safe_call(request, api.list_users, token, limit=200)
     staff = []
 
     # Иерархия должностей — для сортировки и отображения «главной» должности
@@ -296,13 +356,13 @@ def login_page(request):
         if not email or not password:
             error = "Заполните e-mail и пароль."
         else:
-            tokens, error = _safe_call(api.login_user, email, password)
+            tokens, error = _safe_call(request, api.login_user, email, password)
             if tokens:
                 request.session["access_token"] = tokens["access_token"]
                 request.session["refresh_token"] = tokens.get("refresh_token", "")
 
                 # Подтягиваем профиль пользователя
-                user, _ = _safe_call(api.get_current_user, tokens["access_token"])
+                user, _ = _safe_call(request, api.get_current_user, tokens["access_token"])
                 if user:
                     _set_session_user(request, user)
 
@@ -314,7 +374,7 @@ def login_page(request):
 def logout_page(request):
     refresh_token = request.session.get("refresh_token")
     if refresh_token:
-        _safe_call(api.logout_user, refresh_token)
+        _safe_call(request, api.logout_user, refresh_token)
     request.session.flush()
     return redirect("login")
 
@@ -347,7 +407,7 @@ def register_page(request):
             error = "Пароль и подтверждение не совпадают."
         else:
             _, err = _safe_call(
-                api.register_user,
+                request, api.register_user,
                 form_data["name"],
                 form_data["surname"],
                 form_data["email"],
@@ -358,11 +418,11 @@ def register_page(request):
                 error = err
             else:
                 # Регистрация прошла — сразу логиним пользователя
-                tokens, login_err = _safe_call(api.login_user, form_data["email"], password)
+                tokens, login_err = _safe_call(request, api.login_user, form_data["email"], password)
                 if tokens:
                     request.session["access_token"] = tokens["access_token"]
                     request.session["refresh_token"] = tokens.get("refresh_token", "")
-                    user, _ = _safe_call(api.get_current_user, tokens["access_token"])
+                    user, _ = _safe_call(request, api.get_current_user, tokens["access_token"])
                     if user:
                         _set_session_user(request, user)
                     return redirect("home")
@@ -401,7 +461,7 @@ def profile_page(request):
             elif len(new) < 6:
                 password_error = "Пароль должен быть не короче 6 символов"
             else:
-                _, err = _safe_call(api.change_password, token, user.get("id"), old, new)
+                _, err = _safe_call(request, api.change_password, token, user.get("id"), old, new)
                 if err:
                     password_error = err
                 else:
@@ -421,7 +481,7 @@ def profile_page(request):
             if not payload:
                 profile_error = "Изменений нет"
             else:
-                updated, err = _safe_call(api.update_user, token, user.get("id"), payload)
+                updated, err = _safe_call(request, api.update_user, token, user.get("id"), payload)
                 if err:
                     profile_error = err
                 else:
@@ -445,7 +505,7 @@ def profile_page(request):
                     for chunk in avatar_file.chunks():
                         f.write(chunk)
                 try:
-                    updated, err = _safe_call(api.upload_avatar, token, tmp_path, avatar_file.name)
+                    updated, err = _safe_call(request, api.upload_avatar, token, tmp_path, avatar_file.name)
                     if err:
                         avatar_error = err
                     else:
@@ -456,7 +516,7 @@ def profile_page(request):
                     try: os.remove(tmp_path)
                     except OSError: pass
 
-    recent_announcements, _ = _safe_call(api.list_announcements, token, status="published", limit=5)
+    recent_announcements, _ = _safe_call(request, api.list_announcements, token, status="published", limit=5)
 
     return render(request, "pages/profile.html", {
         "user": user,
@@ -481,7 +541,7 @@ def announcements_page(request):
     user = _get_user(request) or {}
     status_filter = request.GET.get("status") or None
 
-    items, error = _safe_call(api.list_announcements, token, status=status_filter)
+    items, error = _safe_call(request, api.list_announcements, token, status=status_filter)
     enriched = []
     for a in items or []:
         st = a.get("status")
@@ -504,7 +564,7 @@ def announcement_detail_page(request, announcement_id: int):
     token = _get_token(request)
     user = _get_user(request) or {}
 
-    ann, error = _safe_call(api.get_announcement, token, announcement_id)
+    ann, error = _safe_call(request, api.get_announcement, token, announcement_id)
     if ann:
         st = ann.get("status")
         ann["status_label"] = api.ANNOUNCEMENT_STATUS_LABELS.get(st, st)
@@ -534,8 +594,8 @@ def announcement_create_page(request):
     form_data: Dict[str, Any] = {}
 
     # Подгружаем справочники групп и потоков для адресации
-    groups_data, _ = _safe_call(api.list_groups, token)
-    streams_data, _ = _safe_call(api.list_streams, token)
+    groups_data, _ = _safe_call(request, api.list_groups, token)
+    streams_data, _ = _safe_call(request, api.list_streams, token)
 
     if request.method == "POST":
         title = request.POST.get("title", "").strip()
@@ -555,7 +615,7 @@ def announcement_create_page(request):
             error = "Заполните заголовок и текст объявления."
         else:
             created, err = _safe_call(
-                api.create_announcement, token,
+                request, api.create_announcement, token,
                 title=title, content=content,
                 target_group_ids=group_ids or None,
                 target_stream_ids=stream_ids or None,
@@ -580,7 +640,7 @@ def announcement_create_page(request):
 @require_POST
 def announcement_archive(request, announcement_id: int):
     token = _get_token(request)
-    _, err = _safe_call(api.archive_announcement, token, announcement_id)
+    _, err = _safe_call(request, api.archive_announcement, token, announcement_id)
     if err:
         # Можно показать flash-сообщение, но проще просто редирект назад
         pass
@@ -591,7 +651,7 @@ def announcement_archive(request, announcement_id: int):
 @require_POST
 def announcement_restore(request, announcement_id: int):
     token = _get_token(request)
-    _safe_call(api.restore_announcement, token, announcement_id)
+    _safe_call(request, api.restore_announcement, token, announcement_id)
     return redirect("announcement_detail", announcement_id=announcement_id)
 
 
@@ -599,7 +659,7 @@ def announcement_restore(request, announcement_id: int):
 @require_POST
 def announcement_delete(request, announcement_id: int):
     token = _get_token(request)
-    _safe_call(api.delete_announcement, token, announcement_id)
+    _safe_call(request, api.delete_announcement, token, announcement_id)
     return redirect("announcements")
 
 
@@ -612,7 +672,7 @@ def events_page(request):
     token = _get_token(request)
     user = _get_user(request) or {}
 
-    raw_events, error = _safe_call(api.list_events, token)
+    raw_events, error = _safe_call(request, api.list_events, token)
     events = [_make_image_full_url(e) for e in (raw_events or [])]
 
     return render(request, "pages/events.html", {
@@ -629,7 +689,7 @@ def event_create_page(request):
     if not api.can_create_content(user.get("role")):
         return redirect("events")
 
-    rooms_data, _ = _safe_call(api.list_rooms, token)
+    rooms_data, _ = _safe_call(request, api.list_rooms, token)
     error: Optional[str] = None
     form_data: Dict[str, Any] = {}
 
@@ -653,7 +713,7 @@ def event_create_page(request):
             error = "Заполните название, дату начала и дату окончания."
         else:
             created, err = _safe_call(
-                api.create_event, token,
+                request, api.create_event, token,
                 title=title, starts_at=starts_at, ends_at=ends_at,
                 annotation=annotation or None, room_id=room_id,
             )
@@ -679,12 +739,13 @@ def documents_page(request):
     user = _get_user(request) or {}
     category = request.GET.get("category") or None
 
-    raw_docs, error = _safe_call(api.list_documents, token)
+    raw_docs, error = _safe_call(request, api.list_documents, token)
     documents = []
     for d in raw_docs or []:
         if category and d.get("category") != category:
             continue
-        d["download_url"] = api.document_download_url(d["id"])
+        # Скачивание идёт через Django (он добавит JWT-токен), не напрямую на FastAPI
+        d["download_url"] = reverse("document_download", args=[d["id"]])
         d["category_label"] = api.CATEGORY_LABELS.get(
             d.get("category"), d.get("category", "")
         )
@@ -696,6 +757,22 @@ def documents_page(request):
         "error": error,
         "can_upload": api.can_upload_documents(user.get("role")),
     })
+
+
+@login_required_view
+def document_download(request, doc_id):
+    """Прокси-скачивание документа: Django качает файл с FastAPI с токеном и отдаёт пользователю."""
+    token = _get_token(request)
+    result, error = _safe_call(request, api.fetch_document_file, token, doc_id)
+    if error or not result:
+        raise Http404(error or "Документ не найден")
+    content, filename, content_type = result
+
+    response = HttpResponse(content, content_type=content_type)
+    # inline для просмотра в браузере (PDF/картинки откроются), скачивание — через download-атрибут в шаблоне
+    from urllib.parse import quote
+    response["Content-Disposition"] = f"inline; filename*=UTF-8''{quote(filename)}"
+    return response
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -741,7 +818,7 @@ def schedule_page(request):
     group_id_param = request.GET.get("group_id")
     teacher_id_param = request.GET.get("teacher_id")
 
-    groups_data, _ = _safe_call(api.list_groups, token)
+    groups_data, _ = _safe_call(request, api.list_groups, token)
 
     lessons: List[Dict[str, Any]] = []
     error: Optional[str] = None
@@ -749,11 +826,11 @@ def schedule_page(request):
 
     if teacher_id_param and teacher_id_param.isdigit():
         teacher_id = int(teacher_id_param)
-        lessons, error = _safe_call(api.lessons_by_teacher, token, teacher_id, week=week_filter)
+        lessons, error = _safe_call(request, api.lessons_by_teacher, token, teacher_id, week=week_filter)
         current_source = f"teacher:{teacher_id}"
     elif group_id_param and group_id_param.isdigit():
         group_id = int(group_id_param)
-        lessons, error = _safe_call(api.lessons_by_group, token, group_id, week=week_filter)
+        lessons, error = _safe_call(request, api.lessons_by_group, token, group_id, week=week_filter)
         current_source = f"group:{group_id}"
     else:
         # Для студента — расписание его группы по умолчанию (если профиль студента есть)
@@ -761,11 +838,11 @@ def schedule_page(request):
             student_profile = user.get("student_profiles") or {}
             sgid = student_profile.get("group_id") if isinstance(student_profile, dict) else None
             if sgid:
-                lessons, error = _safe_call(api.lessons_by_group, token, sgid, week=week_filter)
+                lessons, error = _safe_call(request, api.lessons_by_group, token, sgid, week=week_filter)
                 current_source = f"group:{sgid}"
         # Для преподавателя — его собственное расписание
         elif user_role == "teacher":
-            lessons, error = _safe_call(api.lessons_by_teacher, token, user.get("id"), week=week_filter)
+            lessons, error = _safe_call(request, api.lessons_by_teacher, token, user.get("id"), week=week_filter)
             current_source = f"teacher:{user.get('id')}"
 
     lessons = lessons or []
@@ -816,12 +893,12 @@ def attendance_page(request):
     error: Optional[str] = None
 
     if role == "student" and user.get("id"):
-        reports, error = _safe_call(api.student_attendance, token, user["id"])
+        reports, error = _safe_call(request, api.student_attendance, token, user["id"])
     elif role in {"teacher", "headman", "admin"}:
         # Преподаватель смотрит посещаемость по конкретному занятию
         lesson_id_param = request.GET.get("lesson_id")
         if lesson_id_param and lesson_id_param.isdigit():
-            reports, error = _safe_call(api.lesson_attendance, token, int(lesson_id_param))
+            reports, error = _safe_call(request, api.lesson_attendance, token, int(lesson_id_param))
     reports = reports or []
 
     # Сводная статистика для KPI-карточек
@@ -859,7 +936,7 @@ def generate_qr_page(request, lesson_id: int):
     token_data: Optional[Dict[str, Any]] = None
 
     if request.method == "POST":
-        token_data, error = _safe_call(api.create_attendance_token, token, lesson_id)
+        token_data, error = _safe_call(request, api.create_attendance_token, token, lesson_id)
 
     return render(request, "pages/attendance_qr.html", {
         "lesson_id": lesson_id,
@@ -877,7 +954,7 @@ def generate_qr_page(request, lesson_id: int):
 def chats_page(request):
     """Список чатов."""
     token = _get_token(request)
-    chats, error = _safe_call(api.list_chats, token)
+    chats, error = _safe_call(request, api.list_chats, token)
     return render(request, "pages/chats.html", {
         "chats": chats or [],
         "error": error,
@@ -889,7 +966,7 @@ def chat_room_page(request, chat_id: int):
     """Окно конкретного чата с WebSocket-клиентом."""
     token = _get_token(request)
     user = _get_user(request) or {}
-    messages, error = _safe_call(api.chat_messages, token, chat_id, limit=100)
+    messages, error = _safe_call(request, api.chat_messages, token, chat_id, limit=100)
     return render(request, "pages/chat_room.html", {
         "chat_id": chat_id,
         "messages": messages or [],

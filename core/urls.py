@@ -29,6 +29,7 @@ urlpatterns = [
 
     # Документы и расписание
     path("documents/", views.documents_page, name="documents"),
+    path("documents/<int:doc_id>/download/", views.document_download, name="document_download"),
     path("schedule/", views.schedule_page, name="schedule"),
 
     # Посещаемость и QR

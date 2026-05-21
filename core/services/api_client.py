@@ -37,6 +37,11 @@ def _headers(token: Optional[str] = None, json_body: bool = False) -> Dict[str, 
     return headers
 
 
+class TokenExpiredError(RuntimeError):
+    """Access-токен недействителен или истёк (HTTP 401)."""
+    pass
+
+
 def _handle(response: requests.Response) -> Any:
     """Единая обработка ответа: возвращает данные или бросает RuntimeError."""
     try:
@@ -53,6 +58,10 @@ def _handle(response: requests.Response) -> Any:
             detail = "; ".join(str(item) for item in data["detail"])
         else:
             detail = str(data["detail"])
+
+    # 401 — токен протух, отдельное исключение для авто-рефреша
+    if response.status_code == 401:
+        raise TokenExpiredError(detail)
 
     raise RuntimeError(detail)
 
@@ -512,6 +521,31 @@ def upload_document(token: str, title: str, category: str,
 def document_download_url(doc_id: str) -> str:
     """URL для скачивания документа (передаётся в шаблон)."""
     return _url(f"/documents/{doc_id}/download")
+
+
+def fetch_document_file(token: str, doc_id) -> tuple:
+    """Скачивает файл документа с FastAPI. Возвращает (content_bytes, filename, content_type)."""
+    response = requests.get(
+        _url(f"/documents/{doc_id}/download"),
+        headers=_headers(token),
+        timeout=TIMEOUT * 3,
+        stream=False,
+    )
+    if response.status_code == 401:
+        raise TokenExpiredError("Токен истёк")
+    if not response.ok:
+        raise RuntimeError(f"Не удалось скачать документ (HTTP {response.status_code})")
+    # Имя файла из заголовка Content-Disposition
+    filename = f"document_{doc_id}"
+    cd = response.headers.get("Content-Disposition", "")
+    if "filename" in cd:
+        import re as _re
+        m = _re.search(r'filename\*?=(?:UTF-8\'\')?"?([^";]+)"?', cd)
+        if m:
+            from urllib.parse import unquote
+            filename = unquote(m.group(1))
+    content_type = response.headers.get("Content-Type", "application/octet-stream")
+    return response.content, filename, content_type
 
 
 def update_document(token: str, doc_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
