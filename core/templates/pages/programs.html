@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Направления подготовки{% endblock %}
+
+{% block content %}
+<section class="hero hero--narrow">
+    <div class="container">
+        <div class="hero__center">
+            <h1 class="hero__title">Направления подготовки</h1>
+            <p class="hero__subtitle">
+                Кафедра «Системы искусственного интеллекта» ИКИТ СФУ
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <a href="{% url 'about' %}">О кафедре</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Направления подготовки</span>
+        </nav>
+
+        <p style="margin-bottom: 32px; font-size: 17px;">
+            Кафедра ведёт подготовку по трёхуровневой схеме «бакалавр — магистр — аспирант».
+            Ниже приведены актуальные направления и профили подготовки
+        </p>
+
+        <!-- ───── Бакалавриат 09.03.02 ───── -->
+        <article class="card" style="margin-bottom: 32px;">
+            <div class="card__body" style="padding: 32px;">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <span class="text-mono" style="font-size: 18px; padding: 6px 12px; background: var(--color-surface-2); border-radius: 8px;">09.03.02</span>
+                    <span class="badge badge--blue">Бакалавриат · 4 года</span>
+                </div>
+
+                <h2 style="font-size: 26px; margin-bottom: 8px;">Информационные системы и технологии</h2>
+                <p class="text-muted" style="margin-bottom: 20px;">
+                    Профиль 09.03.02.30 «Информационные системы и технологии»
+                </p>
+
+                <p style="margin-bottom: 20px;">
+                    Базовое инженерное образование в области проектирования, разработки и сопровождения
+                    информационных систем. Студенты осваивают программирование, базы данных,
+                    веб- и мобильную разработку, основы искусственного интеллекта и управление IT-проектами.
+                </p>
+
+                <div class="grid grid--2" style="gap: 24px;">
+                    <div>
+                        <h4 style="font-size: 13px; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 12px; letter-spacing: 0.04em;">Профильные дисциплины</h4>
+                        <ul style="padding-left: 20px; line-height: 1.8; margin: 0;">
+                            <li>Программирование и алгоритмы</li>
+                            <li>Базы данных</li>
+                            <li>Веб-разработка и мобильные приложения</li>
+                            <li>Архитектура информационных систем</li>
+                            <li>Основы искусственного интеллекта</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 13px; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 12px; letter-spacing: 0.04em;">Карьера</h4>
+                        <p style="margin: 0;">
+                            Разработчик ПО, аналитик информационных систем, проектировщик систем,
+                            инженер по данным, специалист по интеграции
+                        </p>
+                    </div>
+                </div>
+
+                <a href="http://edu.sfu-kras.ru/programs?keywords=09.03.02.30" target="_blank" rel="noopener" class="btn btn--outline btn--sm" style="margin-top: 20px;">
+                    Программа на edu.sfu-kras.ru →
+                </a>
+            </div>
+        </article>
+
+        <!-- ───── Магистратура 09.04.01 ───── -->
+        <article class="card" style="margin-bottom: 32px;">
+            <div class="card__body" style="padding: 32px;">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <span class="text-mono" style="font-size: 18px; padding: 6px 12px; background: var(--color-surface-2); border-radius: 8px;">09.04.01</span>
+                    <span class="badge badge--mint">Магистратура · 2 года</span>
+                </div>
+
+                <h2 style="font-size: 26px; margin-bottom: 8px;">Информатика и вычислительная техника</h2>
+                <p class="text-muted" style="margin-bottom: 20px;">
+                    Профиль 09.04.01.10 «Интеллектуальные информационные системы»
+                </p>
+
+                <p style="margin-bottom: 20px;">
+                    Углублённая подготовка в области интеллектуальных информационных систем, машинного
+                    обучения, обработки изображений и видеопоследовательностей, систем поддержки принятия
+                    решений. Программа реализуется на базе лаборатории систем искусственного интеллекта
+                    под руководством профессора Г. М. Цибульского.
+                </p>
+
+                <div class="grid grid--2" style="gap: 24px;">
+                    <div>
+                        <h4 style="font-size: 13px; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 12px; letter-spacing: 0.04em;">Профильные дисциплины</h4>
+                        <ul style="padding-left: 20px; line-height: 1.8; margin: 0;">
+                            <li>Машинное обучение и нейронные сети</li>
+                            <li>Компьютерное зрение и обработка изображений</li>
+                            <li>Интеллектуальный анализ данных</li>
+                            <li>Системы поддержки принятия решений</li>
+                            <li>Базы знаний</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 13px; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 12px; letter-spacing: 0.04em;">Карьера</h4>
+                        <p style="margin: 0;">
+                            ML-инженер, Data Scientist, исследователь в области искусственного
+                            интеллекта, аспирантура
+                        </p>
+                    </div>
+                </div>
+
+                <a href="http://edu.sfu-kras.ru/programs?keywords=09.04.01.10" target="_blank" rel="noopener" class="btn btn--outline btn--sm" style="margin-top: 20px;">
+                    Программа на edu.sfu-kras.ru →
+                </a>
+            </div>
+        </article>
+
+        <!-- ───── Магистратура 09.04.02 ───── -->
+        <article class="card" style="margin-bottom: 32px;">
+            <div class="card__body" style="padding: 32px;">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <span class="text-mono" style="font-size: 18px; padding: 6px 12px; background: var(--color-surface-2); border-radius: 8px;">09.04.02</span>
+                    <span class="badge badge--mint">Магистратура · 2 года</span>
+                    <span class="badge badge--neutral">Два профиля</span>
+                </div>
+
+                <h2 style="font-size: 26px; margin-bottom: 20px;">Информационные системы и технологии</h2>
+
+                <!-- Профиль 1 -->
+                <div style="padding: 20px; border: 1px solid var(--color-border); border-radius: 12px; margin-bottom: 16px;">
+                    <h3 style="font-size: 18px; margin-bottom: 8px;">
+                        <span class="text-mono text-muted" style="font-size: 14px;">09.04.02.01</span><br>
+                        Информационно-управляющие системы
+                    </h3>
+                    <p style="margin: 8px 0 12px;">
+                        Проектирование информационно-управляющих систем, методы анализа данных,
+                        численно-вероятностный анализ. Руководитель профиля — профессор Б. С. Добронец.
+                    </p>
+                    <a href="http://edu.sfu-kras.ru/programs?keywords=09.04.02.01" target="_blank" rel="noopener" class="btn btn--outline btn--sm">
+                        Программа →
+                    </a>
+                </div>
+
+                <!-- Профиль 2 -->
+                <div style="padding: 20px; border: 1px solid var(--color-border); border-radius: 12px;">
+                    <h3 style="font-size: 18px; margin-bottom: 8px;">
+                        <span class="text-mono text-muted" style="font-size: 14px;">09.04.02.05</span><br>
+                        Информационные системы дистанционного зондирования Земли
+                    </h3>
+                    <p style="margin: 8px 0 12px;">
+                        Геоинформационные системы, анализ космических снимков, системы космического
+                        мониторинга. Программа реализуется на базе НУЛ информационной поддержки
+                        космического мониторинга под руководством профессора Ю. А. Маглинца.
+                    </p>
+                    <a href="http://edu.sfu-kras.ru/programs?keywords=09.04.02.05" target="_blank" rel="noopener" class="btn btn--outline btn--sm">
+                        Программа →
+                    </a>
+                </div>
+            </div>
+        </article>
+
+        <!-- ───── Информация о приёме ───── -->
+        <div class="card" style="background: var(--color-surface-2);">
+            <div class="card__body" style="padding: 24px; text-align: center;">
+                <h3 style="font-size: 20px; margin-bottom: 12px;">Информация о приёме</h3>
+                <p style="margin-bottom: 16px;">
+                    Точные проходные баллы, количество бюджетных мест и расписание вступительных
+                    испытаний публикуются на сайтах ИКИТ и приёмной комиссии СФУ
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <a href="https://ikit.sfu-kras.ru/kafsii" target="_blank" rel="noopener" class="btn btn--outline">
+                        Страница кафедры
+                    </a>
+                    <a href="https://admissions.sfu-kras.ru/" target="_blank" rel="noopener" class="btn btn--outline">
+                        Приёмная комиссия СФУ
+                    </a>
+                    <a href="https://ikit.sfu-kras.ru/" target="_blank" rel="noopener" class="btn btn--outline">
+                        Сайт ИКИТ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

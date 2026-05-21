@@ -12,10 +12,8 @@
                 <span class="hero__title-accent">«Системы искусственного интеллекта»</span>
             </h1>
             <p class="hero__subtitle">
-                Цифровая платформа для студентов и преподавателей.
-                Расписание, посещаемость, объявления, документы и кафедральные
-                события — всё в одном кабинете.
-            </p>
+                <strong>Цифровая платформа для студентов и преподавателей</strong><br>
+                Расписание, посещаемость, объявления, документы и кафедральные события</p>
             <div class="hero__actions">
                 {% if request.session.access_token %}
                     <a href="{% url 'profile' %}" class="btn btn--primary btn--lg">
@@ -43,9 +41,10 @@
         <div class="section-header">
             <h2 class="section-title">Что есть на портале</h2>
             <p class="section-subtitle">
-                Шесть основных разделов покрывают повседневные задачи студентов и сотрудников кафедры.
-            </p>
+                Информационные разделы и интерактивные сервисы для повседневных задач кафедры</p>
         </div>
+
+        <h3 class="section-subhead" style="font-size: 18px; font-weight: 600; margin: 32px 0 16px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Разделы</h3>
 
         <div class="feature-grid">
             <a href="{% url 'announcements' %}" class="feature-card" style="text-decoration:none; color:inherit;">
@@ -57,8 +56,7 @@
                 </div>
                 <h3 class="feature-card__title">Объявления</h3>
                 <p class="feature-card__text">
-                    Актуальная информация для групп, потоков и всей кафедры.
-                    Адресная рассылка с прикреплёнными материалами.
+                    Актуальная информация для групп, потоков и всей кафедры
                 </p>
                 <span class="feature-card__link">Перейти</span>
             </a>
@@ -74,8 +72,7 @@
                 </div>
                 <h3 class="feature-card__title">События</h3>
                 <p class="feature-card__text">
-                    Конференции, защиты, открытые лекции, олимпиады
-                    и дни открытых дверей кафедры.
+                    Конференции, защиты, открытые лекции и дни открытых дверей
                 </p>
                 <span class="feature-card__link">Перейти</span>
             </a>
@@ -89,12 +86,46 @@
                 </div>
                 <h3 class="feature-card__title">Документы</h3>
                 <p class="feature-card__text">
-                    Приказы, методические указания, темы ВКР, шаблоны и регламенты —
-                    всё с разграничением прав доступа.
+                    Приказы, методические указания, темы ВКР, шаблоны и регламенты
                 </p>
                 <span class="feature-card__link">Перейти</span>
             </a>
 
+            <a href="{% url 'staff' %}" class="feature-card feature-card--mint" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 010 7.75"></path>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Состав кафедры</h3>
+                <p class="feature-card__text">
+                    Преподавательский состав, должности и контактная информация
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+
+            <a href="{% url 'about' %}" class="feature-card" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">О кафедре</h3>
+                <p class="feature-card__text">
+                    Миссия, направления подготовки, контакты и расположение
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+        </div>
+
+        <h3 class="section-subhead" style="font-size: 18px; font-weight: 600; margin: 48px 0 16px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Сервисы</h3>
+
+        <div class="feature-grid">
             <a href="{% url 'schedule' %}" class="feature-card feature-card--mint" style="text-decoration:none; color:inherit;">
                 <div class="feature-card__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -104,8 +135,7 @@
                 </div>
                 <h3 class="feature-card__title">Расписание</h3>
                 <p class="feature-card__text">
-                    Расписание занятий по группам и преподавателям.
-                    Чёт/нечёт, переключение по неделям.
+                    Занятия по группам и преподавателям, переключение по неделям
                 </p>
                 <span class="feature-card__link">Перейти</span>
             </a>
@@ -122,24 +152,33 @@
                 <h3 class="feature-card__title">Посещаемость</h3>
                 <p class="feature-card__text">
                     QR-коды на занятиях, журнал отметок, персональная статистика
-                    для каждого студента.
                 </p>
                 <span class="feature-card__link">Перейти</span>
             </a>
 
-            <a href="{% url 'staff' %}" class="feature-card feature-card--mint" style="text-decoration:none; color:inherit;">
+            <a href="{% url 'chats' %}" class="feature-card feature-card--mint" style="text-decoration:none; color:inherit;">
                 <div class="feature-card__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 010 7.75"></path>
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                 </div>
-                <h3 class="feature-card__title">Состав кафедры</h3>
+                <h3 class="feature-card__title">Чаты</h3>
                 <p class="feature-card__text">
-                    Преподавательский состав, должности, читаемые дисциплины
-                    и контактная информация.
+                    Групповые и личные переписки в реальном времени
+                </p>
+                <span class="feature-card__link">Перейти</span>
+            </a>
+
+            <a href="{% url 'profile' %}" class="feature-card" style="text-decoration:none; color:inherit;">
+                <div class="feature-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Личный кабинет</h3>
+                <p class="feature-card__text">
+                    Профиль, аватар, смена пароля, личные данные
                 </p>
                 <span class="feature-card__link">Перейти</span>
             </a>
@@ -179,8 +218,7 @@
                 </svg>
                 <h3 class="empty-state__title">Объявлений пока нет</h3>
                 <p class="empty-state__text">
-                    Когда на кафедре появятся новости, они отобразятся здесь.
-                </p>
+                    Когда на кафедре появятся новости, они отобразятся здесь</p>
             </div>
         {% endif %}
     </div>
@@ -226,8 +264,7 @@
                 </svg>
                 <h3 class="empty-state__title">Событий пока нет</h3>
                 <p class="empty-state__text">
-                    Здесь будут анонсы конференций, защит и открытых лекций.
-                </p>
+                    Здесь будут анонсы конференций, защит и открытых лекций</p>
             </div>
         {% endif %}
     </div>

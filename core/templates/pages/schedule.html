@@ -30,8 +30,7 @@
         <div class="section-header">
             <h1 class="section-title">Расписание занятий</h1>
             <p class="section-subtitle">
-                Расписание по группе или преподавателю с переключением между чётной и нечётной неделями.
-            </p>
+                Расписание по группе или преподавателю с переключением между чётной и нечётной неделями</p>
         </div>
 
         <form method="get" class="schedule-toolbar">
@@ -49,11 +48,15 @@
 
             <div class="field" style="margin: 0;">
                 <label class="field__label">Неделя</label>
-                <div style="display: flex; gap: 4px;">
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                    <a href="?{% if current_source %}group_id={{ current_source|cut:'group:' }}&{% endif %}week=current"
+                       class="btn btn--sm {% if current_week == 'current' %}btn--primary{% else %}btn--outline{% endif %}">Текущая</a>
                     <a href="?{% if current_source %}group_id={{ current_source|cut:'group:' }}&{% endif %}week=1"
                        class="btn btn--sm {% if current_week == 1 %}btn--primary{% else %}btn--outline{% endif %}">Нечётная</a>
                     <a href="?{% if current_source %}group_id={{ current_source|cut:'group:' }}&{% endif %}week=2"
                        class="btn btn--sm {% if current_week == 2 %}btn--primary{% else %}btn--outline{% endif %}">Чётная</a>
+                    <a href="?{% if current_source %}group_id={{ current_source|cut:'group:' }}&{% endif %}week=both"
+                       class="btn btn--sm {% if current_week == 'both' %}btn--primary{% else %}btn--outline{% endif %}">Обе</a>
                 </div>
             </div>
         </form>
@@ -96,8 +99,7 @@
                 </svg>
                 <h3 class="empty-state__title">Выберите группу или войдите как преподаватель</h3>
                 <p class="empty-state__text">
-                    Расписание отображается для выбранной учебной группы или для авторизованного преподавателя.
-                </p>
+                    Расписание отображается для выбранной учебной группы или для авторизованного преподавателя</p>
             </div>
         {% endif %}
     </div>

@@ -11,12 +11,16 @@
             <span class="crumbs__current">Состав кафедры</span>
         </nav>
 
-        <div class="section-header">
-            <h1 class="section-title">Преподавательский состав</h1>
-            <p class="section-subtitle">
-                Профессорско-преподавательский состав кафедры
-                «Системы искусственного интеллекта».
-            </p>
+        <div class="section-head-row">
+            <div class="section-header">
+                <h1 class="section-title">Преподавательский состав</h1>
+                <p class="section-subtitle">
+                    Профессорско-преподавательский состав кафедры
+                    «Системы искусственного интеллекта»</p>
+            </div>
+            {% if request.session.user.can_manage_users %}
+                <a href="{% url 'manage_staff' %}" class="btn btn--primary">Управление составом</a>
+            {% endif %}
         </div>
 
         {% if require_login %}
@@ -47,8 +51,8 @@
                 {% for person in staff %}
                     <article class="staff-card">
                         <div class="staff-card__photo">
-                            {% if person.photo_url %}
-                                <img src="{{ person.photo_url }}" alt="{{ person.full_name }}">
+                            {% if person.avatar_url %}
+                                <img src="{{ person.avatar_url }}" alt="{{ person.full_name }}">
                             {% else %}
                                 <span class="staff-card__placeholder">{{ person.initials }}</span>
                             {% endif %}
@@ -96,8 +100,7 @@
                 </svg>
                 <h3 class="empty-state__title">Список сотрудников пуст</h3>
                 <p class="empty-state__text">
-                    Информация о составе кафедры будет доступна после её заполнения администратором.
-                </p>
+                    Информация о составе кафедры будет доступна после её заполнения администратором</p>
             </div>
         {% endif %}
     </div>

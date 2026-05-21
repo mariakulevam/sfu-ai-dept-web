@@ -58,63 +58,6 @@
         });
     }
 
-    // ── Аватарка пользователя из localStorage ──────────────
-    const AVATAR_KEY = 'sfu_user_avatar';
-    const savedAvatar = localStorage.getItem(AVATAR_KEY);
-
-    function applyAvatar(dataUrl) {
-        document.querySelectorAll('.sidebar__user-avatar, .topbar__user-avatar, .profile-avatar').forEach((el) => {
-            el.style.backgroundImage = `url('${dataUrl}')`;
-            el.classList.add('has-photo');
-        });
-    }
-
-    function clearAvatar() {
-        document.querySelectorAll('.sidebar__user-avatar, .topbar__user-avatar, .profile-avatar').forEach((el) => {
-            el.style.backgroundImage = '';
-            el.classList.remove('has-photo');
-        });
-    }
-
-    if (savedAvatar) {
-        applyAvatar(savedAvatar);
-    }
-
-    // Загрузка аватарки из профиля
-    const avatarInput = document.getElementById('avatar-upload');
-    const avatarRemoveBtn = document.getElementById('avatar-remove');
-
-    if (avatarInput) {
-        avatarInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (!file.type.startsWith('image/')) {
-                alert('Можно загружать только изображения.');
-                return;
-            }
-            if (file.size > 2 * 1024 * 1024) {
-                alert('Размер файла не должен превышать 2 МБ.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const dataUrl = evt.target.result;
-                localStorage.setItem(AVATAR_KEY, dataUrl);
-                applyAvatar(dataUrl);
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    if (avatarRemoveBtn) {
-        avatarRemoveBtn.addEventListener('click', () => {
-            if (confirm('Удалить фото профиля?')) {
-                localStorage.removeItem(AVATAR_KEY);
-                clearAvatar();
-            }
-        });
-    }
-
     // ── Бургер-меню для публичной шапки (для гостей) ──────
     const burger = document.querySelector('[data-burger]');
     const nav = document.querySelector('.site-nav');

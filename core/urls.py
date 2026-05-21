@@ -5,7 +5,9 @@ urlpatterns = [
     # Публичные
     path("", views.home_page, name="home"),
     path("about/", views.about_page, name="about"),
+    path("programs/", views.programs_page, name="programs"),
     path("staff/", views.staff_page, name="staff"),
+    path("staff/manage/", views.manage_staff_page, name="manage_staff"),
 
     # Авторизация
     path("login/", views.login_page, name="login"),

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление составом{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <a href="{% url 'staff' %}">Состав кафедры</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Управление</span>
+        </nav>
+
+        <div class="section-header">
+            <h1 class="section-title">Управление составом кафедры</h1>
+            <p class="section-subtitle">
+                Добавление и удаление сотрудников кафедры
+            </p>
+        </div>
+
+        {% if form_success %}
+            <div class="alert alert--success" style="margin-bottom: 24px;">
+                <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <div>{{ form_success }}</div>
+            </div>
+        {% endif %}
+        {% if form_error %}
+            <div class="alert alert--danger" style="margin-bottom: 24px;">
+                <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                <div>{{ form_error }}</div>
+            </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 360px 1fr; gap: 32px; align-items: start;" class="manage-grid">
+            <!-- Форма добавления -->
+            <div class="card">
+                <div class="card__body">
+                    <h3 style="margin-bottom: 16px;">Добавить сотрудника</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_staff">
+
+                        <div class="field">
+                            <label class="field__label" for="surname">Фамилия</label>
+                            <input class="input" type="text" id="surname" name="surname" placeholder="Иванов" required>
+                        </div>
+                        <div class="field">
+                            <label class="field__label" for="name">Имя</label>
+                            <input class="input" type="text" id="name" name="name" placeholder="Иван" required>
+                        </div>
+                        <div class="field">
+                            <label class="field__label" for="patronymic">Отчество <span style="color: var(--color-text-muted); font-weight: 400;">(необязательно)</span></label>
+                            <input class="input" type="text" id="patronymic" name="patronymic" placeholder="Иванович">
+                        </div>
+                        <div class="field">
+                            <label class="field__label" for="email">E-mail</label>
+                            <input class="input" type="email" id="email" name="email" placeholder="user@sfu-kras.ru" required>
+                        </div>
+                        <div class="field">
+                            <label class="field__label" for="role">Роль</label>
+                            <select class="select" id="role" name="role">
+                                <option value="teacher">Преподаватель</option>
+                                <option value="dean">Заведующий кафедрой</option>
+                                <option value="deputy_head">Заместитель заведующего</option>
+                                <option value="headman">Староста</option>
+                            </select>
+                        </div>
+
+                        <p class="text-muted" style="font-size: 13px; margin-bottom: 16px;">
+                            Пароль для входа будет сгенерирован автоматически и отправлен
+                            на указанный e-mail
+                        </p>
+
+                        <button type="submit" class="btn btn--primary btn--block">Добавить сотрудника</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Список сотрудников -->
+            <div>
+                {% if load_error %}
+                    <div class="alert alert--warning" style="margin-bottom: 24px;">{{ load_error }}</div>
+                {% endif %}
+
+                {% if staff %}
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ФИО</th>
+                                    <th>Роль</th>
+                                    <th>E-mail</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for person in staff %}
+                                    <tr>
+                                        <td><strong>{{ person.full_name }}</strong></td>
+                                        <td><span class="badge badge--mint">{{ person.role_label }}</span></td>
+                                        <td class="text-muted">{{ person.email }}</td>
+                                        <td>
+                                            <form method="post" onsubmit="return confirm('Удалить сотрудника {{ person.full_name }}?');" style="margin: 0;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="delete_staff">
+                                                <input type="hidden" name="user_id" value="{{ person.id }}">
+                                                <button type="submit" class="btn btn--ghost btn--sm" style="color: var(--color-danger);">Удалить</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <h3 class="empty-state__title">Сотрудников пока нет</h3>
+                        <p class="empty-state__text">Добавьте первого сотрудника через форму слева</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+@media (max-width: 900px) {
+    .manage-grid { grid-template-columns: 1fr !important; }
+}
+</style>
+{% endblock %}

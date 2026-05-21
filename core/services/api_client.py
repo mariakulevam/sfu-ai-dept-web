@@ -61,6 +61,21 @@ def _url(path: str) -> str:
     return f"{settings.FASTAPI_API_BASE}{path}"
 
 
+def get_media_url(relative_path: Optional[str]) -> Optional[str]:
+    """Преобразовать относительный путь файла (например '/uploads/avatars/...') в полный URL."""
+    if not relative_path:
+        return None
+    if relative_path.startswith("http://") or relative_path.startswith("https://"):
+        return relative_path
+    # Берём базу без /api/v1
+    base = settings.FASTAPI_API_BASE.rstrip("/")
+    if base.endswith("/api/v1"):
+        base = base[:-len("/api/v1")]
+    if not relative_path.startswith("/"):
+        relative_path = "/" + relative_path
+    return f"{base}{relative_path}"
+
+
 # ═══════════════════════════════════════════════════════════════
 #  АВТОРИЗАЦИЯ — /auth/*
 # ═══════════════════════════════════════════════════════════════
@@ -145,6 +160,43 @@ def list_users(token: str, skip: int = 0, limit: int = 100) -> List[Dict[str, An
     return _handle(response) or []
 
 
+def admin_create_user(token: str, name: str, surname: str, email: str,
+                      role: str, patronymic: Optional[str] = None,
+                      password: Optional[str] = None) -> Dict[str, Any]:
+    """POST /users — создание пользователя администратором.
+
+    Для ролей teacher/headman/dean/deputy_head пароль генерируется на сервере
+    и отправляется на email. Для student/admin пароль обязателен.
+    """
+    body: Dict[str, Any] = {
+        "name": name,
+        "surname": surname,
+        "email": email,
+        "role": role,
+    }
+    if patronymic:
+        body["patronymic"] = patronymic
+    if password:
+        body["password"] = password
+    response = requests.post(
+        _url("/users"),
+        headers=_headers(token, json_body=True),
+        json=body,
+        timeout=TIMEOUT,
+    )
+    return _handle(response)
+
+
+def delete_user(token: str, user_id: int) -> None:
+    """DELETE /users/{id} — удаление пользователя (только admin)."""
+    response = requests.delete(
+        _url(f"/users/{user_id}"),
+        headers=_headers(token),
+        timeout=TIMEOUT,
+    )
+    _handle(response)
+
+
 def get_user(token: str, user_id: int) -> Dict[str, Any]:
     """GET /users/{id} — профиль конкретного пользователя."""
     response = requests.get(
@@ -176,6 +228,52 @@ def change_password(token: str, user_id: int,
         timeout=TIMEOUT,
     )
     _handle(response)
+
+
+def set_avatar(token: str, document_id: int) -> Dict[str, Any]:
+    """PATCH /users/me/avatar — установить аватар из ранее загруженного документа."""
+    response = requests.patch(
+        _url("/users/me/avatar"),
+        headers=_headers(token),
+        params={"document_id": document_id},
+        timeout=TIMEOUT,
+    )
+    return _handle(response)
+
+
+def upload_avatar(token: str, file_path: str, file_name: str = "avatar.png") -> Dict[str, Any]:
+    """Загрузить файл картинки как аватар: создаёт документ + ставит его аватаром.
+    
+    Возвращает обновлённые данные пользователя.
+    """
+    # Сначала загружаем как документ с категорией avatar
+    data = {
+        "title": "avatar",
+        "category": "other",
+        "visibility": "private",
+    }
+    with open(file_path, "rb") as fh:
+        files = {"file": (file_name, fh)}
+        response = requests.post(
+            _url("/documents"),
+            headers=_headers(token),
+            data=data,
+            files=files,
+            timeout=TIMEOUT * 2,
+        )
+    doc = _handle(response)
+    # Теперь ставим этот документ аватаром
+    return set_avatar(token, doc["id"])
+
+
+def sync_lessons(token: str) -> Dict[str, Any]:
+    """POST /lessons/sync — синхронизация расписания с edu.sfu-kras.ru (только admin/dean)."""
+    response = requests.post(
+        _url("/lessons/sync"),
+        headers=_headers(token),
+        timeout=60,  # синхронизация может занять время
+    )
+    return _handle(response)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -724,6 +822,11 @@ def can_manage_attendance(role: Optional[str]) -> bool:
 def can_manage_announcements(role: Optional[str]) -> bool:
     """Кто архивирует, восстанавливает, удаляет объявления."""
     return role in {"headman", "deputy_head", "dean", "admin"}
+
+
+def can_manage_users(role: Optional[str]) -> bool:
+    """Кто может добавлять и удалять сотрудников кафедры. Только администратор."""
+    return role == "admin"
 
 
 def humanize_size(size_bytes: Optional[int]) -> str:

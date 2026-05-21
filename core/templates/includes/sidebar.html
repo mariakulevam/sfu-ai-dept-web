@@ -99,17 +99,6 @@
                 <span>Документы</span>
             </a>
 
-            <div class="sidebar__group-title">Коммуникации</div>
-
-            <a href="{% url 'chats' %}"
-               class="sidebar__link {% if request.resolver_match.url_name == 'chats' or request.resolver_match.url_name == 'chat_room' %}sidebar__link--active{% endif %}"
-               title="Чаты">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                <span>Чаты</span>
-            </a>
-
             <a href="{% url 'staff' %}"
                class="sidebar__link {% if request.resolver_match.url_name == 'staff' %}sidebar__link--active{% endif %}"
                title="Состав кафедры">
@@ -133,16 +122,41 @@
                 <span>О кафедре</span>
             </a>
 
+            <a href="{% url 'programs' %}"
+               class="sidebar__link {% if request.resolver_match.url_name == 'programs' %}sidebar__link--active{% endif %}"
+               title="Направления подготовки">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                </svg>
+                <span>Направления подготовки</span>
+            </a>
+
+            <div class="sidebar__group-title">Общение</div>
+
+            <a href="{% url 'chats' %}"
+               class="sidebar__link {% if request.resolver_match.url_name == 'chats' or request.resolver_match.url_name == 'chat_room' %}sidebar__link--active{% endif %}"
+               title="Чаты">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Чаты</span>
+            </a>
+
         </nav>
 
         <div class="sidebar__footer">
             <a href="{% url 'profile' %}" class="sidebar__user" title="{{ request.session.user.full_name|default:'Профиль' }}">
-                <span class="sidebar__user-avatar" id="sidebar-user-avatar">
-                    <span class="sidebar__user-initials">{{ request.session.user.initials|default:'·' }}</span>
+                <span class="sidebar__user-avatar" id="sidebar-user-avatar"{% if request.session.user.avatar_url %} style="background-image: url('{{ request.session.user.avatar_url }}'); background-size: cover; background-position: center;"{% endif %}>
+                    {% if not request.session.user.avatar_url %}
+                        <span class="sidebar__user-initials">{{ request.session.user.initials|default:'·' }}</span>
+                    {% endif %}
                 </span>
                 <span class="sidebar__user-info">
                     <span class="sidebar__user-name">{{ request.session.user.short_name|default:'Пользователь' }}</span>
-                    <span class="sidebar__user-role">{{ request.session.user.role_label|default:'' }}</span>
+                    <span class="sidebar__user-role">
+                        {{ request.session.user.role_label|default:'' }}{% if request.session.user.group_name %} · {{ request.session.user.group_name }}{% endif %}
+                    </span>
                 </span>
             </a>
             <a href="{% url 'logout' %}" class="sidebar__logout" aria-label="Выйти" title="Выйти">

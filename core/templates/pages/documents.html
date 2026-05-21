@@ -15,8 +15,7 @@
             <div class="section-header">
                 <h1 class="section-title">Документы кафедры</h1>
                 <p class="section-subtitle">
-                    Приказы, методические материалы, темы выпускных квалификационных работ и шаблоны.
-                </p>
+                    Приказы, методические материалы, темы выпускных квалификационных работ и шаблоны</p>
             </div>
             {% if can_upload %}
                 <a href="#upload" class="btn btn--primary">+ Загрузить документ</a>
@@ -29,6 +28,7 @@
             <a href="?category=method" class="tab {% if current_category == 'method' %}tab--active{% endif %}">Методические</a>
             <a href="?category=vkr" class="tab {% if current_category == 'vkr' %}tab--active{% endif %}">Темы ВКР</a>
             <a href="?category=template" class="tab {% if current_category == 'template' %}tab--active{% endif %}">Шаблоны</a>
+            <a href="?category=other" class="tab {% if current_category == 'other' %}tab--active{% endif %}">Другое</a>
         </div>
 
         {% if error %}
@@ -59,8 +59,11 @@
                                     <span class="badge badge--mint">{{ doc.category_label }}</span>
                                 </td>
                                 <td class="text-mono">{{ doc.created_at|date:"d.m.Y" }}</td>
-                                <td>
-                                    <a href="{{ doc.download_url }}" class="btn btn--ghost btn--sm" target="_blank">
+                                <td style="white-space: nowrap;">
+                                    <a href="{{ doc.download_url }}" class="btn btn--ghost btn--sm" target="_blank" rel="noopener">
+                                        Открыть
+                                    </a>
+                                    <a href="{{ doc.download_url }}" class="btn btn--ghost btn--sm" download>
                                         Скачать ↓
                                     </a>
                                 </td>
@@ -79,8 +82,7 @@
                     {% if current_category %}В этой категории документов нет{% else %}Документов пока нет{% endif %}
                 </h3>
                 <p class="empty-state__text">
-                    {% if can_upload %}Загрузите первый документ.{% else %}Когда кафедра опубликует документы, они появятся здесь.{% endif %}
-                </p>
+                    {% if can_upload %}Загрузите первый документ.{% else %}Когда кафедра опубликует документы, они появятся здесь.{% endif %}</p>
             </div>
         {% endif %}
     </div>

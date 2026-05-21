@@ -39,16 +39,32 @@ def _set_session_user(request, user: Dict[str, Any]) -> None:
     """Кладёт обогащённую сводку пользователя в сессию для шапки/прав."""
     fn = api.full_name(user)
     sn = api.short_name(user)
+
+    # Серверный аватар: путь к файлу относительно api-сервера
+    avatar_path = user.get("avatar")
+    avatar_url = api.get_media_url(avatar_path)
+
+    # Имя группы — если есть student_profile с group
+    group_name = None
+    sp = user.get("student_profile") or user.get("student_profiles")
+    if isinstance(sp, dict):
+        gr = sp.get("group")
+        if isinstance(gr, dict):
+            group_name = gr.get("name")
+
     request.session["user"] = {
         **user,
         "full_name": fn,
         "short_name": sn,
         "initials": api.make_initials(user),
         "role_label": api.ROLE_LABELS.get(user.get("role"), user.get("role", "пользователь")),
+        "avatar_url": avatar_url,
+        "group_name": group_name,
         "can_create_content": api.can_create_content(user.get("role")),
         "can_upload_documents": api.can_upload_documents(user.get("role")),
         "can_manage_attendance": api.can_manage_attendance(user.get("role")),
         "can_manage_announcements": api.can_manage_announcements(user.get("role")),
+        "can_manage_users": api.can_manage_users(user.get("role")),
     }
 
 
@@ -108,6 +124,85 @@ def about_page(request):
     return render(request, "pages/about.html")
 
 
+def programs_page(request):
+    return render(request, "pages/programs.html")
+
+
+@login_required_view
+def manage_staff_page(request):
+    """Управление составом кафедры — добавление и удаление сотрудников. Только admin."""
+    token = _get_token(request)
+    user = _get_user(request) or {}
+
+    if not api.can_manage_users(user.get("role")):
+        return redirect("staff")
+
+    form_error: Optional[str] = None
+    form_success: Optional[str] = None
+
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+
+        # ── Добавление сотрудника ──
+        if action == "add_staff":
+            name = request.POST.get("name", "").strip()
+            surname = request.POST.get("surname", "").strip()
+            patronymic = request.POST.get("patronymic", "").strip()
+            email = request.POST.get("email", "").strip()
+            role = request.POST.get("role", "teacher")
+
+            if not name or not surname:
+                form_error = "Заполните имя и фамилию"
+            elif not email:
+                form_error = "Укажите e-mail"
+            elif role not in {"teacher", "dean", "deputy_head", "headman"}:
+                form_error = "Недопустимая роль"
+            else:
+                _, err = _safe_call(
+                    api.admin_create_user, token,
+                    name, surname, email, role,
+                    patronymic=patronymic or None,
+                )
+                if err:
+                    form_error = err
+                else:
+                    form_success = (
+                        f"Сотрудник {surname} {name} добавлен. "
+                        f"Пароль для входа отправлен на {email}"
+                    )
+
+        # ── Удаление сотрудника ──
+        elif action == "delete_staff":
+            user_id = request.POST.get("user_id")
+            if user_id and user_id.isdigit():
+                _, err = _safe_call(api.delete_user, token, int(user_id))
+                if err:
+                    form_error = err
+                else:
+                    form_success = "Сотрудник удалён"
+
+    # Текущий список сотрудников
+    users_data, error = _safe_call(api.list_users, token, limit=200)
+    staff = []
+    for u in users_data or []:
+        role = u.get("role")
+        if role not in {"teacher", "deputy_head", "dean", "headman"}:
+            continue
+        staff.append({
+            **u,
+            "full_name": api.full_name(u),
+            "role_label": api.ROLE_LABELS.get(role, role),
+        })
+    staff.sort(key=lambda x: x.get("surname") or "")
+
+    return render(request, "pages/manage_staff.html", {
+        "staff": staff,
+        "form_error": form_error,
+        "form_success": form_success,
+        "load_error": error,
+    })
+
+
 def staff_page(request):
     """Состав кафедры — только для авторизованных (API требует токен)."""
     token = _get_token(request)
@@ -140,6 +235,7 @@ def staff_page(request):
             continue
 
         profile = u.get("teacher_profile") or {}
+        dean_profile = u.get("dean_profile") or {}
         positions = profile.get("positions") or []
 
         # Находим «главную» должность (с наименьшим рангом)
@@ -150,16 +246,25 @@ def staff_page(request):
                 key=lambda p: POSITION_RANK.get(p, 99),
             )[0]
 
+        # Для роли dean показываем «заведующий кафедрой» вместо обычной должности
+        if role == "dean":
+            position_label = dean_profile.get("position") or "Заведующий кафедрой"
+        elif role == "deputy_head":
+            position_label = "Заместитель заведующего кафедрой"
+        else:
+            position_label = api.TEACHER_POSITION_LABELS.get(main_position, "Преподаватель")
+
         person = {
             **u,
             "full_name": api.full_name(u),
             "initials": api.make_initials(u),
             "role_label": api.ROLE_LABELS.get(role, role),
-            "position_label": api.TEACHER_POSITION_LABELS.get(main_position, "Преподаватель"),
+            "position_label": position_label,
             "all_positions": [api.TEACHER_POSITION_LABELS.get(p, p) for p in positions],
-            "cabinet": profile.get("cabinet"),
-            "phone": profile.get("phone"),
-            "department": profile.get("department"),
+            "cabinet": profile.get("cabinet") or dean_profile.get("cabinet"),
+            "phone": profile.get("phone") or dean_profile.get("phone"),
+            "department": profile.get("department") or dean_profile.get("faculty"),
+            "avatar_url": api.get_media_url(u.get("avatar")),
             "_sort_key": (ROLE_RANK.get(role, 9), POSITION_RANK.get(main_position, 99)),
         }
         staff.append(person)
@@ -269,30 +374,87 @@ def register_page(request):
 
 @login_required_view
 def profile_page(request):
-    """Личный кабинет — профиль + смена пароля."""
+    """Личный кабинет — профиль + смена пароля + аватар + редактирование."""
     user = _get_user(request) or {}
     token = _get_token(request)
 
-    # При смене пароля
     password_error: Optional[str] = None
     password_success: Optional[str] = None
-    if request.method == "POST" and request.POST.get("action") == "change_password":
-        old = request.POST.get("old_password", "")
-        new = request.POST.get("new_password", "")
-        confirm = request.POST.get("confirm_password", "")
+    profile_error: Optional[str] = None
+    profile_success: Optional[str] = None
+    avatar_error: Optional[str] = None
+    avatar_success: Optional[str] = None
 
-        if not old or not new:
-            password_error = "Заполните оба поля."
-        elif new != confirm:
-            password_error = "Новый пароль и подтверждение не совпадают."
-        elif len(new) < 6:
-            password_error = "Пароль должен быть не короче 6 символов."
-        else:
-            _, err = _safe_call(api.change_password, token, user.get("id"), old, new)
-            if err:
-                password_error = err
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+
+        # ── Смена пароля ──
+        if action == "change_password":
+            old = request.POST.get("old_password", "")
+            new = request.POST.get("new_password", "")
+            confirm = request.POST.get("confirm_password", "")
+
+            if not old or not new:
+                password_error = "Заполните оба поля"
+            elif new != confirm:
+                password_error = "Новый пароль и подтверждение не совпадают"
+            elif len(new) < 6:
+                password_error = "Пароль должен быть не короче 6 символов"
             else:
-                password_success = "Пароль успешно изменён."
+                _, err = _safe_call(api.change_password, token, user.get("id"), old, new)
+                if err:
+                    password_error = err
+                else:
+                    password_success = "Пароль успешно изменён"
+
+        # ── Редактирование профиля (имя, email) ──
+        elif action == "update_profile":
+            new_name = request.POST.get("name", "").strip()
+            new_email = request.POST.get("email", "").strip()
+
+            payload = {}
+            if new_name and new_name != user.get("name"):
+                payload["name"] = new_name
+            if new_email and new_email != user.get("email"):
+                payload["email"] = new_email
+
+            if not payload:
+                profile_error = "Изменений нет"
+            else:
+                updated, err = _safe_call(api.update_user, token, user.get("id"), payload)
+                if err:
+                    profile_error = err
+                else:
+                    _set_session_user(request, updated)
+                    user = updated
+                    profile_success = "Изменения сохранены"
+
+        # ── Загрузка аватара ──
+        elif action == "upload_avatar":
+            avatar_file = request.FILES.get("avatar")
+            if not avatar_file:
+                avatar_error = "Файл не выбран"
+            elif avatar_file.size > 2 * 1024 * 1024:
+                avatar_error = "Размер файла не более 2 МБ"
+            else:
+                import tempfile, os
+                # Сохраняем во временный файл
+                tmp_dir = tempfile.gettempdir()
+                tmp_path = os.path.join(tmp_dir, avatar_file.name)
+                with open(tmp_path, "wb") as f:
+                    for chunk in avatar_file.chunks():
+                        f.write(chunk)
+                try:
+                    updated, err = _safe_call(api.upload_avatar, token, tmp_path, avatar_file.name)
+                    if err:
+                        avatar_error = err
+                    else:
+                        _set_session_user(request, updated)
+                        user = updated
+                        avatar_success = "Аватар обновлён"
+                finally:
+                    try: os.remove(tmp_path)
+                    except OSError: pass
 
     recent_announcements, _ = _safe_call(api.list_announcements, token, status="published", limit=5)
 
@@ -301,6 +463,10 @@ def profile_page(request):
         "recent_announcements": recent_announcements or [],
         "password_error": password_error,
         "password_success": password_success,
+        "profile_error": profile_error,
+        "profile_success": profile_success,
+        "avatar_error": avatar_error,
+        "avatar_success": avatar_success,
     })
 
 
@@ -543,11 +709,34 @@ def schedule_page(request):
     user_role = user.get("role")
 
     # Определение источника расписания
+    # week может быть: None (по умолчанию), 'current', 'both', '1' (нечётная), '2' (чётная)
     week_param = request.GET.get("week")
-    try:
-        week = int(week_param) if week_param else None
-    except ValueError:
-        week = None
+    week_filter: Optional[int] = None  # что отправляем в API (1, 2 или None)
+    week_label = None  # что показываем в UI
+
+    if week_param == "current":
+        # Текущая неделя — высчитываем чётность по номеру недели в году от 1 февраля
+        from datetime import date
+        today = date.today()
+        # Условно: семестр стартует с 1 сентября, недели чередуются с этой даты
+        if today.month >= 9:
+            start = date(today.year, 9, 1)
+        elif today.month >= 2:
+            start = date(today.year, 2, 1)
+        else:
+            start = date(today.year - 1, 9, 1)
+        diff_weeks = ((today - start).days // 7)
+        # Нечётная (week=1) если diff_weeks чётный, иначе чётная (week=2)
+        week_filter = 1 if diff_weeks % 2 == 0 else 2
+        week_label = "current"
+    elif week_param == "both":
+        week_filter = None  # без фильтра — обе недели
+        week_label = "both"
+    elif week_param in ("1", "2"):
+        week_filter = int(week_param)
+        week_label = week_filter
+    else:
+        week_label = None
 
     group_id_param = request.GET.get("group_id")
     teacher_id_param = request.GET.get("teacher_id")
@@ -560,11 +749,11 @@ def schedule_page(request):
 
     if teacher_id_param and teacher_id_param.isdigit():
         teacher_id = int(teacher_id_param)
-        lessons, error = _safe_call(api.lessons_by_teacher, token, teacher_id, week=week)
+        lessons, error = _safe_call(api.lessons_by_teacher, token, teacher_id, week=week_filter)
         current_source = f"teacher:{teacher_id}"
     elif group_id_param and group_id_param.isdigit():
         group_id = int(group_id_param)
-        lessons, error = _safe_call(api.lessons_by_group, token, group_id, week=week)
+        lessons, error = _safe_call(api.lessons_by_group, token, group_id, week=week_filter)
         current_source = f"group:{group_id}"
     else:
         # Для студента — расписание его группы по умолчанию (если профиль студента есть)
@@ -572,11 +761,11 @@ def schedule_page(request):
             student_profile = user.get("student_profiles") or {}
             sgid = student_profile.get("group_id") if isinstance(student_profile, dict) else None
             if sgid:
-                lessons, error = _safe_call(api.lessons_by_group, token, sgid, week=week)
+                lessons, error = _safe_call(api.lessons_by_group, token, sgid, week=week_filter)
                 current_source = f"group:{sgid}"
         # Для преподавателя — его собственное расписание
         elif user_role == "teacher":
-            lessons, error = _safe_call(api.lessons_by_teacher, token, user.get("id"), week=week)
+            lessons, error = _safe_call(api.lessons_by_teacher, token, user.get("id"), week=week_filter)
             current_source = f"teacher:{user.get('id')}"
 
     lessons = lessons or []
@@ -607,7 +796,7 @@ def schedule_page(request):
         "groups": groups_data or [],
         "days_data": days_data,
         "has_lessons": bool(lessons),
-        "current_week": week,
+        "current_week": week_label,
         "current_source": current_source,
         "error": error,
     })
