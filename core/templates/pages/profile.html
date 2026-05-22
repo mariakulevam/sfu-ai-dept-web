@@ -125,18 +125,24 @@
                             <input type="hidden" name="action" value="update_profile">
 
                             <div class="field">
+                                <label class="field__label" for="surname">Фамилия</label>
+                                <input class="input" type="text" id="surname" name="surname" value="{{ user.surname|default:'' }}">
+                            </div>
+
+                            <div class="field">
                                 <label class="field__label" for="name">Имя</label>
                                 <input class="input" type="text" id="name" name="name" value="{{ user.name|default:'' }}">
+                            </div>
+
+                            <div class="field">
+                                <label class="field__label" for="patronymic">Отчество</label>
+                                <input class="input" type="text" id="patronymic" name="patronymic" value="{{ user.patronymic|default:'' }}">
                             </div>
 
                             <div class="field">
                                 <label class="field__label" for="email">E-mail</label>
                                 <input class="input" type="email" id="email" name="email" value="{{ user.email|default:'' }}">
                             </div>
-
-                            <p class="text-muted" style="font-size: 13px; margin-bottom: 16px;">
-                                Изменение фамилии и отчества выполняется администратором кафедры
-                            </p>
 
                             <button type="submit" class="btn btn--primary">Сохранить</button>
                         </form>

@@ -470,11 +470,17 @@ def profile_page(request):
         # ── Редактирование профиля (имя, email) ──
         elif action == "update_profile":
             new_name = request.POST.get("name", "").strip()
+            new_surname = request.POST.get("surname", "").strip()
+            new_patronymic = request.POST.get("patronymic", "").strip()
             new_email = request.POST.get("email", "").strip()
 
             payload = {}
             if new_name and new_name != user.get("name"):
                 payload["name"] = new_name
+            if new_surname and new_surname != user.get("surname"):
+                payload["surname"] = new_surname
+            if new_patronymic != (user.get("patronymic") or ""):
+                payload["patronymic"] = new_patronymic
             if new_email and new_email != user.get("email"):
                 payload["email"] = new_email
 
