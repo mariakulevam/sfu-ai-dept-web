@@ -81,6 +81,9 @@
                 <!-- Действия для управляющих -->
                 {% if can_manage or is_author %}
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+                        {% if can_manage %}
+                            <a href="{% url 'announcement_edit' announcement.id %}" class="btn btn--primary">✎ Редактировать</a>
+                        {% endif %}
                         {% if can_manage and announcement.status == 'published' %}
                             <form method="post" action="{% url 'announcement_archive' announcement.id %}" style="display: inline;">
                                 {% csrf_token %}

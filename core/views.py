@@ -78,14 +78,45 @@ def login_required_view(view_func: Callable) -> Callable:
     return wrapped
 
 
+import logging
+_logger = logging.getLogger("kafedra.token")
+
+
+def token_debug(request):
+    """ВРЕМЕННАЯ диагностика токенов. Удалить после отладки."""
+    from django.http import JsonResponse
+    access = request.session.get("access_token")
+    refresh = request.session.get("refresh_token")
+    info = {
+        "has_access_token": bool(access),
+        "access_token_preview": (access[:20] + "...") if access else None,
+        "has_refresh_token": bool(refresh),
+        "refresh_token_preview": (refresh[:20] + "...") if refresh else None,
+        "session_keys": list(request.session.keys()),
+    }
+    # Пробуем рефрешнуть прямо сейчас и показываем результат
+    if refresh:
+        try:
+            tokens = api.refresh_tokens(refresh)
+            info["refresh_test"] = "OK — refresh работает, получены новые токены"
+            info["refresh_returned_keys"] = list(tokens.keys()) if isinstance(tokens, dict) else str(type(tokens))
+        except Exception as exc:
+            info["refresh_test"] = f"ОШИБКА: {exc}"
+    else:
+        info["refresh_test"] = "refresh_token отсутствует в сессии"
+    return JsonResponse(info, json_dumps_params={"ensure_ascii": False, "indent": 2})
+
+
 def _refresh_access_token(request) -> Optional[str]:
     """Пытается обновить access-токен через refresh. Возвращает новый токен или None."""
     refresh = request.session.get("refresh_token")
     if not refresh:
+        _logger.warning("REFRESH: в сессии нет refresh_token — рефрешить нечем")
         return None
     try:
         tokens = api.refresh_tokens(refresh)
-    except Exception:
+    except Exception as exc:
+        _logger.warning("REFRESH: /auth/refresh упал: %s", exc)
         return None
     new_access = tokens.get("access_token")
     new_refresh = tokens.get("refresh_token")
@@ -94,7 +125,9 @@ def _refresh_access_token(request) -> Optional[str]:
         if new_refresh:
             request.session["refresh_token"] = new_refresh
         request.session.modified = True
+        _logger.info("REFRESH: токен успешно обновлён")
         return new_access
+    _logger.warning("REFRESH: /auth/refresh вернул ответ без access_token: %s", tokens)
     return None
 
 
@@ -643,6 +676,74 @@ def announcement_create_page(request):
 
 
 @login_required_view
+def announcement_edit_page(request, announcement_id: int):
+    """Редактирование объявления (headman, deputy_head, dean)."""
+    token = _get_token(request)
+    user = _get_user(request) or {}
+    if not api.can_manage_announcements(user.get("role")):
+        return redirect("announcement_detail", announcement_id=announcement_id)
+
+    error: Optional[str] = None
+
+    # Текущее объявление
+    ann, load_err = _safe_call(request, api.get_announcement, token, announcement_id)
+    if load_err or not ann:
+        raise Http404("Объявление не найдено")
+
+    groups_data, _ = _safe_call(request, api.list_groups, token)
+    streams_data, _ = _safe_call(request, api.list_streams, token)
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        content = request.POST.get("content", "").strip()
+        group_ids = [int(g) for g in request.POST.getlist("group_ids") if g.isdigit()]
+        stream_ids = [int(s) for s in request.POST.getlist("stream_ids") if s.isdigit()]
+        publish_at = request.POST.get("publish_at") or None
+        expires_at = request.POST.get("expires_at") or None
+
+        if not title or not content:
+            error = "Заполните заголовок и текст объявления."
+        else:
+            payload = {
+                "title": title,
+                "content": content,
+                "target_group_ids": group_ids or None,
+                "target_stream_ids": stream_ids or None,
+                "publish_at": publish_at,
+                "expires_at": expires_at,
+            }
+            updated, err = _safe_call(request, api.update_announcement, token, announcement_id, payload)
+            if err:
+                error = err
+            elif updated:
+                return redirect("announcement_detail", announcement_id=announcement_id)
+        # при ошибке — показываем введённое
+        ann = {**ann, "title": title, "content": content}
+
+    # Предзаполнение выбранных групп/потоков
+    selected_group_ids = [g.get("id") for g in (ann.get("target_groups") or [])]
+    selected_stream_ids = [s.get("id") for s in (ann.get("target_streams") or [])]
+
+    return render(request, "pages/announcement_form.html", {
+        "groups": groups_data or [],
+        "streams": streams_data or [],
+        "error": error,
+        "form": {
+            "title": ann.get("title", ""),
+            "content": ann.get("content", ""),
+            "group_ids": selected_group_ids,
+            "stream_ids": selected_stream_ids,
+            "publish_at": (ann.get("publish_at") or "")[:16],
+            "expires_at": (ann.get("expires_at") or "")[:16],
+        },
+        "form_title": "Редактировать объявление",
+        "submit_label": "Сохранить",
+        "is_edit": True,
+        "announcement_id": announcement_id,
+    })
+
+
+@login_required_view
 @require_POST
 def announcement_archive(request, announcement_id: int):
     token = _get_token(request)
@@ -732,7 +833,77 @@ def event_create_page(request):
         "rooms": rooms_data or [],
         "error": error,
         "form": form_data,
+        "form_title": "Новое событие",
+        "submit_label": "Создать",
     })
+
+
+@login_required_view
+def event_edit_page(request, event_id: int):
+    """Редактирование события (teacher, headman, admin)."""
+    token = _get_token(request)
+    user = _get_user(request) or {}
+    if not api.can_create_content(user.get("role")):
+        return redirect("events")
+
+    event, load_err = _safe_call(request, api.get_event, token, event_id)
+    if load_err or not event:
+        raise Http404("Событие не найдено")
+
+    rooms_data, _ = _safe_call(request, api.list_rooms, token)
+    error: Optional[str] = None
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        annotation = request.POST.get("annotation", "").strip()
+        starts_at = request.POST.get("starts_at", "").strip()
+        ends_at = request.POST.get("ends_at", "").strip()
+        room_id = request.POST.get("room_id") or None
+        if room_id and not room_id.isdigit():
+            room_id = None
+        room_id = int(room_id) if room_id else None
+
+        if not title or not starts_at or not ends_at:
+            error = "Заполните название, дату начала и дату окончания."
+        else:
+            payload = {
+                "title": title,
+                "annotation": annotation or None,
+                "starts_at": starts_at,
+                "ends_at": ends_at,
+                "room_id": room_id,
+            }
+            updated, err = _safe_call(request, api.update_event, token, event_id, payload)
+            if err:
+                error = err
+            elif updated:
+                return redirect("events")
+        event = {**event, "title": title, "annotation": annotation,
+                 "starts_at": starts_at, "ends_at": ends_at, "room_id": room_id}
+
+    return render(request, "pages/event_form.html", {
+        "rooms": rooms_data or [],
+        "error": error,
+        "form": {
+            "title": event.get("title", ""),
+            "annotation": event.get("annotation", ""),
+            "starts_at": (event.get("starts_at") or "")[:16],
+            "ends_at": (event.get("ends_at") or "")[:16],
+            "room_id": event.get("room_id"),
+        },
+        "form_title": "Редактировать событие",
+        "submit_label": "Сохранить",
+        "is_edit": True,
+        "event_id": event_id,
+    })
+
+
+@login_required_view
+@require_POST
+def event_delete(request, event_id: int):
+    token = _get_token(request)
+    _safe_call(request, api.delete_event, token, event_id)
+    return redirect("events")
 
 
 # ═══════════════════════════════════════════════════════════════

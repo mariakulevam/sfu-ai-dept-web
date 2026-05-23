@@ -70,7 +70,8 @@
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px; background: var(--color-surface-soft); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto;">
                             {% for g in groups %}
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" name="group_ids" value="{{ g.id }}">
+                                    <input type="checkbox" name="group_ids" value="{{ g.id }}"
+                                           {% if g.id in form.group_ids %}checked{% endif %}>
                                     <span>{{ g.name }}</span>
                                 </label>
                             {% endfor %}
@@ -86,7 +87,8 @@
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; background: var(--color-surface-soft); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto;">
                             {% for s in streams %}
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" name="stream_ids" value="{{ s.id }}">
+                                    <input type="checkbox" name="stream_ids" value="{{ s.id }}"
+                                           {% if s.id in form.stream_ids %}checked{% endif %}>
                                     <span>{{ s.name }} ({{ s.year }})</span>
                                 </label>
                             {% endfor %}

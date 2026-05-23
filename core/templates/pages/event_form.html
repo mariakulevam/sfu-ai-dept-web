@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Новое событие{% endblock %}
+{% block title %}{{ form_title|default:"Новое событие" }}{% endblock %}
 
 {% block content %}
 <section class="section">
@@ -10,11 +10,11 @@
             <span class="crumbs__sep">/</span>
             <a href="{% url 'events' %}">События</a>
             <span class="crumbs__sep">/</span>
-            <span class="crumbs__current">Новое событие</span>
+            <span class="crumbs__current">{{ form_title|default:"Новое событие" }}</span>
         </nav>
 
         <div class="section-header">
-            <h1 class="section-title">Новое событие</h1>
+            <h1 class="section-title">{{ form_title|default:"Новое событие" }}</h1>
             <p class="section-subtitle">
                 Конференция, защита, открытая лекция или дни открытых дверей. Фотографию можно прикрепить после создания</p>
         </div>
@@ -71,7 +71,7 @@
                 </div>
 
                 <div style="display: flex; gap: 12px; margin-top: 24px;">
-                    <button type="submit" class="btn btn--primary btn--lg">Создать событие</button>
+                    <button type="submit" class="btn btn--primary btn--lg">{{ submit_label|default:"Создать событие" }}</button>
                     <a href="{% url 'events' %}" class="btn btn--outline btn--lg">Отмена</a>
                 </div>
             </div>

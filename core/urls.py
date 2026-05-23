@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     # Публичные
     path("", views.home_page, name="home"),
+    path("token-debug/", views.token_debug, name="token_debug"),
     path("about/", views.about_page, name="about"),
     path("programs/", views.programs_page, name="programs"),
     path("staff/", views.staff_page, name="staff"),
@@ -19,6 +20,7 @@ urlpatterns = [
     path("announcements/", views.announcements_page, name="announcements"),
     path("announcements/new/", views.announcement_create_page, name="announcement_new"),
     path("announcements/<int:announcement_id>/", views.announcement_detail_page, name="announcement_detail"),
+    path("announcements/<int:announcement_id>/edit/", views.announcement_edit_page, name="announcement_edit"),
     path("announcements/<int:announcement_id>/archive/", views.announcement_archive, name="announcement_archive"),
     path("announcements/<int:announcement_id>/restore/", views.announcement_restore, name="announcement_restore"),
     path("announcements/<int:announcement_id>/delete/", views.announcement_delete, name="announcement_delete"),
@@ -26,6 +28,8 @@ urlpatterns = [
     # События
     path("events/", views.events_page, name="events"),
     path("events/new/", views.event_create_page, name="event_new"),
+    path("events/<int:event_id>/edit/", views.event_edit_page, name="event_edit"),
+    path("events/<int:event_id>/delete/", views.event_delete, name="event_delete"),
 
     # Документы и расписание
     path("documents/", views.documents_page, name="documents"),

@@ -58,6 +58,16 @@
                             {% if event.annotation %}
                                 <p class="card__text">{{ event.annotation|truncatewords:25 }}</p>
                             {% endif %}
+                            {% if can_create %}
+                                <div style="display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border);">
+                                    <a href="{% url 'event_edit' event.id %}" class="btn btn--ghost btn--sm">✎ Изменить</a>
+                                    <form method="post" action="{% url 'event_delete' event.id %}" style="display:inline;"
+                                          onsubmit="return confirm('Удалить событие «{{ event.title|escapejs }}»?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn--ghost btn--sm" style="color: var(--color-danger);">🗑 Удалить</button>
+                                    </form>
+                                </div>
+                            {% endif %}
                         </div>
                     </article>
                 {% endfor %}
