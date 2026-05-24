@@ -82,31 +82,6 @@ import logging
 _logger = logging.getLogger("kafedra.token")
 
 
-def token_debug(request):
-    """ВРЕМЕННАЯ диагностика токенов. Удалить после отладки."""
-    from django.http import JsonResponse
-    access = request.session.get("access_token")
-    refresh = request.session.get("refresh_token")
-    info = {
-        "has_access_token": bool(access),
-        "access_token_preview": (access[:20] + "...") if access else None,
-        "has_refresh_token": bool(refresh),
-        "refresh_token_preview": (refresh[:20] + "...") if refresh else None,
-        "session_keys": list(request.session.keys()),
-    }
-    # Пробуем рефрешнуть прямо сейчас и показываем результат
-    if refresh:
-        try:
-            tokens = api.refresh_tokens(refresh)
-            info["refresh_test"] = "OK — refresh работает, получены новые токены"
-            info["refresh_returned_keys"] = list(tokens.keys()) if isinstance(tokens, dict) else str(type(tokens))
-        except Exception as exc:
-            info["refresh_test"] = f"ОШИБКА: {exc}"
-    else:
-        info["refresh_test"] = "refresh_token отсутствует в сессии"
-    return JsonResponse(info, json_dumps_params={"ensure_ascii": False, "indent": 2})
-
-
 def _refresh_access_token(request) -> Optional[str]:
     """Пытается обновить access-токен через refresh. Возвращает новый токен или None."""
     refresh = request.session.get("refresh_token")

@@ -4,7 +4,6 @@ from . import views
 urlpatterns = [
     # Публичные
     path("", views.home_page, name="home"),
-    path("token-debug/", views.token_debug, name="token_debug"),
     path("about/", views.about_page, name="about"),
     path("programs/", views.programs_page, name="programs"),
     path("staff/", views.staff_page, name="staff"),
