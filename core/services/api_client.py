@@ -744,9 +744,13 @@ def chat_messages(token: str, chat_id: int,
 
 
 def get_chat_ws_url(chat_id: int, access_token: str) -> str:
-    """URL для WebSocket-подключения к чату."""
-    # ws:// или wss:// — зависит от схемы FastAPI
-    base = settings.FASTAPI_ROOT_URL.replace("http://", "ws://").replace("https://", "wss://")
+    """URL для WebSocket-подключения к чату.
+
+    Использует публичный адрес (FASTAPI_PUBLIC_URL), т.к. подключение идёт
+    из браузера пользователя, а не с сервера. На проде это wss://домен.
+    """
+    public = getattr(settings, "FASTAPI_PUBLIC_URL", settings.FASTAPI_ROOT_URL)
+    base = public.replace("http://", "ws://").replace("https://", "wss://")
     return f"{base}/api/v1/chats/{chat_id}/ws?token={access_token}"
 
 

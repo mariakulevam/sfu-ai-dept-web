@@ -1103,6 +1103,24 @@ def generate_qr_page(request, lesson_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @login_required_view
+@login_required_view
+def chat_start_direct(request, user_id: int):
+    """Открыть (или создать) личный чат с пользователем и перейти в него."""
+    token = _get_token(request)
+    me = _get_user(request) or {}
+    if me.get("id") == user_id:
+        return redirect("chats")
+    chat, error = _safe_call(request, api.open_direct_chat, token, user_id)
+    if error or not chat:
+        # Если не удалось — вернёмся к списку чатов с сообщением
+        chats, _ = _safe_call(request, api.list_chats, token)
+        return render(request, "pages/chats.html", {
+            "chats": chats or [],
+            "error": error or "Не удалось открыть чат",
+        })
+    return redirect("chat_room", chat_id=chat["id"])
+
+
 def chats_page(request):
     """Список чатов."""
     token = _get_token(request)
@@ -1119,11 +1137,30 @@ def chat_room_page(request, chat_id: int):
     token = _get_token(request)
     user = _get_user(request) or {}
     messages, error = _safe_call(request, api.chat_messages, token, chat_id, limit=100)
+
+    # Карта id → имя участников (для отображения имён вместо «Пользователь #5»)
+    names = {}
+    chats, _ = _safe_call(request, api.list_chats, token)
+    member_ids = []
+    for c in chats or []:
+        if c.get("id") == chat_id:
+            member_ids = [m.get("user_id") for m in c.get("members", [])]
+            break
+    for uid in member_ids:
+        if uid == user.get("id"):
+            names[uid] = "Вы"
+            continue
+        u_data, _ = _safe_call(request, api.get_user, token, uid)
+        if u_data:
+            names[uid] = api.short_name(u_data) or f"Пользователь #{uid}"
+
+    import json as _json
     return render(request, "pages/chat_room.html", {
         "chat_id": chat_id,
         "messages": messages or [],
         "user": user,
         "ws_url": api.get_chat_ws_url(chat_id, token),
+        "names_json": _json.dumps(names, ensure_ascii=False),
         "error": error,
     })
 

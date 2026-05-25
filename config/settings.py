@@ -106,6 +106,10 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 дней
 
 FASTAPI_ROOT_URL = os.getenv("FASTAPI_ROOT_URL", "http://127.0.0.1:8001")
 FASTAPI_API_BASE = f"{FASTAPI_ROOT_URL}/api/v1"
+# Публичный адрес для WebSocket-подключений из браузера.
+# На проде задаётся явно (например https://av-kushnarenko.ru), т.к. браузер
+# не может подключиться к внутреннему адресу FastAPI. По умолчанию = FASTAPI_ROOT_URL.
+FASTAPI_PUBLIC_URL = os.getenv("FASTAPI_PUBLIC_URL", FASTAPI_ROOT_URL)
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

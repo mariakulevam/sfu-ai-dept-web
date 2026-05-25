@@ -60,7 +60,7 @@
                 {% for msg in messages %}
                     <div class="chat-msg {% if msg.sender_id == user.id %}chat-msg--out{% else %}chat-msg--in{% endif %}">
                         <div class="chat-msg__sender">
-                            {% if msg.sender_id == user.id %}Вы{% else %}Пользователь #{{ msg.sender_id }}{% endif %}
+                            {% if msg.sender_id == user.id %}Вы{% else %}Собеседник{% endif %}
                         </div>
                         <div class="chat-msg__body">{{ msg.body }}</div>
                         <div class="chat-msg__time">{{ msg.created_at|date:"H:i, d.m.Y" }}</div>
@@ -87,6 +87,7 @@
 
     const wsUrl = "{{ ws_url|escapejs }}";
     const myUserId = {{ user.id|default:0 }};
+    const userNames = {{ names_json|safe }};
     const messagesEl = document.getElementById('messages');
     const formEl = document.getElementById('msg-form');
     const inputEl = document.getElementById('msg-input');
@@ -119,8 +120,9 @@
         div.className = 'chat-msg ' + (isOut ? 'chat-msg--out' : 'chat-msg--in');
         const time = new Date(msg.created_at);
         const timeStr = time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const senderName = isOut ? 'Вы' : (userNames[msg.sender_id] || ('Пользователь #' + msg.sender_id));
         div.innerHTML = `
-            <div class="chat-msg__sender">${isOut ? 'Вы' : 'Пользователь #' + msg.sender_id}</div>
+            <div class="chat-msg__sender">${senderName}</div>
             <div class="chat-msg__body"></div>
             <div class="chat-msg__time">${timeStr}</div>
         `;

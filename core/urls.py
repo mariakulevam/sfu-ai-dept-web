@@ -41,5 +41,6 @@ urlpatterns = [
 
     # Чат
     path("chats/", views.chats_page, name="chats"),
+    path("chats/start/<int:user_id>/", views.chat_start_direct, name="chat_start_direct"),
     path("chats/<int:chat_id>/", views.chat_room_page, name="chat_room"),
 ]
