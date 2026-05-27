@@ -11,10 +11,13 @@
             <span class="crumbs__current">Чаты</span>
         </nav>
 
-        <div class="section-header">
-            <h1 class="section-title">Мои чаты</h1>
-            <p class="section-subtitle">
-                Групповые чаты учебных групп и личные переписки</p>
+        <div class="section-head-row">
+            <div class="section-header">
+                <h1 class="section-title">Мои чаты</h1>
+                <p class="section-subtitle">
+                    Групповые чаты учебных групп и личные переписки</p>
+            </div>
+            <a href="{% url 'chat_new' %}" class="btn btn--primary">+ Новый чат</a>
         </div>
 
         {% if error %}
@@ -55,7 +58,8 @@
                 </svg>
                 <h3 class="empty-state__title">Чатов пока нет</h3>
                 <p class="empty-state__text">
-                    Групповой чат создаётся вместе с группой. Личные чаты появляются при первом сообщении</p>
+                    Нажмите «Новый чат», чтобы написать любому пользователю системы</p>
+                <a href="{% url 'chat_new' %}" class="btn btn--primary" style="margin-top: 16px;">+ Новый чат</a>
             </div>
         {% endif %}
     </div>

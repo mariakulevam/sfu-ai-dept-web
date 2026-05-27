@@ -85,6 +85,72 @@
                     {% if can_upload %}Загрузите первый документ.{% else %}Когда кафедра опубликует документы, они появятся здесь.{% endif %}</p>
             </div>
         {% endif %}
+
+        {% if can_upload %}
+            <div id="upload" class="card" style="margin-top: 40px; max-width: 640px;">
+                <div class="card__body">
+                    <h3 style="margin-bottom: 8px;">Загрузить документ</h3>
+                    <p class="text-muted" style="font-size: 14px; margin-bottom: 16px;">
+                        Файл до 20 МБ. Поддерживаются PDF, Word, Excel, изображения и архивы</p>
+
+                    {% if upload_success %}
+                        <div class="alert alert--success" style="margin-bottom: 16px;">
+                            <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <div>{{ upload_success }}</div>
+                        </div>
+                    {% endif %}
+                    {% if upload_error %}
+                        <div class="alert alert--danger" style="margin-bottom: 16px;">
+                            <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            <div>{{ upload_error }}</div>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="upload">
+
+                        <div class="field">
+                            <label class="field__label" for="title">Название</label>
+                            <input class="input" type="text" id="title" name="title" required placeholder="Например: Приказ о расписании сессии">
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="doc-category">Категория</label>
+                            <select class="select" id="doc-category" name="category">
+                                <option value="order">Приказы</option>
+                                <option value="method">Методические</option>
+                                <option value="vkr">Темы ВКР</option>
+                                <option value="template">Шаблоны</option>
+                                <option value="other" selected>Другое</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="visibility">Видимость</label>
+                            <select class="select" id="visibility" name="visibility">
+                                <option value="public" selected>Для всех</option>
+                                <option value="students">Для студентов</option>
+                                <option value="teachers">Для преподавателей</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label" for="file">Файл</label>
+                            <input class="input" type="file" id="file" name="file" required>
+                        </div>
+
+                        <button type="submit" class="btn btn--primary">Загрузить</button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

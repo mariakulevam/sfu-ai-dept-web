@@ -890,13 +890,49 @@ def documents_page(request):
     token = _get_token(request)
     user = _get_user(request) or {}
     category = request.GET.get("category") or None
+    upload_error = None
+    upload_success = None
+
+    # ── Загрузка документа ──
+    if request.method == "POST" and request.POST.get("action") == "upload":
+        if not api.can_upload_documents(user.get("role")):
+            upload_error = "Недостаточно прав для загрузки документов"
+        else:
+            title = request.POST.get("title", "").strip()
+            doc_category = request.POST.get("category", "other").strip()
+            visibility = request.POST.get("visibility", "public").strip()
+            up_file = request.FILES.get("file")
+
+            if not title:
+                upload_error = "Укажите название документа"
+            elif not up_file:
+                upload_error = "Выберите файл"
+            elif up_file.size > 20 * 1024 * 1024:
+                upload_error = "Размер файла не более 20 МБ"
+            else:
+                import tempfile, os
+                tmp_path = os.path.join(tempfile.gettempdir(), up_file.name)
+                with open(tmp_path, "wb") as f:
+                    for chunk in up_file.chunks():
+                        f.write(chunk)
+                try:
+                    _, err = _safe_call(
+                        request, api.upload_document, token,
+                        title, doc_category, [visibility], tmp_path,
+                    )
+                    if err:
+                        upload_error = err
+                    else:
+                        upload_success = f"Документ «{title}» загружен"
+                finally:
+                    try: os.remove(tmp_path)
+                    except OSError: pass
 
     raw_docs, error = _safe_call(request, api.list_documents, token)
     documents = []
     for d in raw_docs or []:
         if category and d.get("category") != category:
             continue
-        # Скачивание идёт через Django (он добавит JWT-токен), не напрямую на FastAPI
         d["download_url"] = reverse("document_download", args=[d["id"]])
         d["category_label"] = api.CATEGORY_LABELS.get(
             d.get("category"), d.get("category", "")
@@ -907,6 +943,8 @@ def documents_page(request):
         "documents": documents,
         "current_category": category,
         "error": error,
+        "upload_error": upload_error,
+        "upload_success": upload_success,
         "can_upload": api.can_upload_documents(user.get("role")),
     })
 
@@ -1103,6 +1141,39 @@ def generate_qr_page(request, lesson_id: int):
 # ═══════════════════════════════════════════════════════════════
 
 @login_required_view
+@login_required_view
+def chat_new_page(request):
+    """Страница выбора собеседника — список всех пользователей для начала чата."""
+    token = _get_token(request)
+    me = _get_user(request) or {}
+    query = request.GET.get("q", "").strip().lower()
+
+    users_data, error = _safe_call(request, api.list_users, token, limit=500)
+    people = []
+    for u in users_data or []:
+        if u.get("id") == me.get("id"):
+            continue  # себя не показываем
+        full = api.full_name(u)
+        # Поиск по имени или email
+        if query and query not in full.lower() and query not in (u.get("email") or "").lower():
+            continue
+        people.append({
+            "id": u.get("id"),
+            "full_name": full,
+            "initials": api.make_initials(u),
+            "role_label": api.ROLE_LABELS.get(u.get("role"), u.get("role", "")),
+            "email": u.get("email", ""),
+            "avatar_url": api.get_media_url(u.get("avatar")),
+        })
+    people.sort(key=lambda x: x["full_name"])
+
+    return render(request, "pages/chat_new.html", {
+        "people": people,
+        "query": request.GET.get("q", ""),
+        "error": error,
+    })
+
+
 @login_required_view
 def chat_start_direct(request, user_id: int):
     """Открыть (или создать) личный чат с пользователем и перейти в него."""
