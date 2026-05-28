@@ -31,6 +31,35 @@ def _get_token(request) -> Optional[str]:
     return request.session.get("access_token")
 
 
+def _member_user_id(member: Any) -> Optional[Any]:
+    """Достаёт id пользователя из элемента members при разных форматах ответа API.
+
+    Бэкенд может присылать участника в виде:
+      - {"user_id": 5, ...}
+      - {"id": 5, ...}                      (id самого участника == id юзера)
+      - {"user": {"id": 5, ...}}            (вложенный объект пользователя)
+      - 5                                    (просто id)
+    """
+    if isinstance(member, (int, str)):
+        return member
+    if isinstance(member, dict):
+        if member.get("user_id") is not None:
+            return member.get("user_id")
+        user = member.get("user")
+        if isinstance(user, dict) and user.get("id") is not None:
+            return user.get("id")
+        if member.get("id") is not None:
+            return member.get("id")
+    return None
+
+
+def _same_id(a: Any, b: Any) -> bool:
+    """Сравнение id, устойчивое к разнице типов (int vs str vs UUID-строка)."""
+    if a is None or b is None:
+        return False
+    return str(a) == str(b)
+
+
 def _get_user(request) -> Optional[Dict[str, Any]]:
     return request.session.get("user")
 
@@ -1210,11 +1239,27 @@ def chats_page(request):
             item["is_group"] = True
         else:
             # Личный чат — находим собеседника (не себя)
+            members = c.get("members") or c.get("participants") or c.get("users") or []
             other_id = None
-            for m in c.get("members", []):
-                if m.get("user_id") != my_id:
-                    other_id = m.get("user_id")
+            for m in members:
+                mid = _member_user_id(m)
+                if mid is not None and not _same_id(mid, my_id):
+                    other_id = mid
                     break
+            # Если собеседник не нашёлся в members — пробуем достать из истории
+            # сообщений (по sender_id, который не равен нам).
+            if other_id is None:
+                if not members:
+                    _logger.warning(
+                        "CHATS: личный чат id=%s без members. Ключи чата: %s",
+                        c.get("id"), list(c.keys()),
+                    )
+                msgs, _ = _safe_call(request, api.chat_messages, token, c.get("id"), limit=20)
+                for msg in msgs or []:
+                    sid = msg.get("sender_id") or msg.get("user_id")
+                    if sid is not None and not _same_id(sid, my_id):
+                        other_id = sid
+                        break
             if other_id:
                 u_data, _ = _safe_call(request, api.get_user, token, other_id)
                 if u_data:
@@ -1223,6 +1268,7 @@ def chats_page(request):
                     item["display_initials"] = api.make_initials(u_data)
                     item["display_role"] = api.ROLE_LABELS.get(u_data.get("role"), "")
                 else:
+                    _logger.warning("CHATS: get_user(%s) вернул пусто", other_id)
                     item["display_name"] = "Собеседник"
                     item["display_initials"] = "?"
             else:
@@ -1250,18 +1296,34 @@ def chat_room_page(request, chat_id: int):
     member_ids = []
     chat_obj = None
     for c in chats or []:
-        if c.get("id") == chat_id:
+        if _same_id(c.get("id"), chat_id):
             chat_obj = c
-            member_ids = [m.get("user_id") for m in c.get("members", [])]
+            raw_members = c.get("members") or c.get("participants") or c.get("users") or []
+            member_ids = [mid for mid in (_member_user_id(m) for m in raw_members) if mid is not None]
             break
+
+    if chat_obj is None:
+        _logger.warning("CHAT_ROOM: чат id=%s не найден в списке /chats", chat_id)
+
+    # Фолбэк: если участников из members получить не удалось — берём их из истории
+    # сообщений по sender_id (так точно вычислим собеседника личного чата).
+    if not member_ids:
+        seen = []
+        for msg in messages or []:
+            sid = msg.get("sender_id") or msg.get("user_id")
+            if sid is not None and sid not in seen:
+                seen.append(sid)
+        member_ids = seen
+        if seen:
+            _logger.info("CHAT_ROOM: участники чата %s восстановлены из сообщений: %s", chat_id, seen)
 
     chat_title = f"Чат #{chat_id}"
     chat_avatar = None
     chat_initials = "?"
-    is_group = chat_obj and chat_obj.get("type") == "group"
+    is_group = bool(chat_obj and chat_obj.get("type") == "group")
 
     for uid in member_ids:
-        if uid == user.get("id"):
+        if _same_id(uid, user.get("id")):
             names[uid] = "Вы"
             continue
         u_data, _ = _safe_call(request, api.get_user, token, uid)
@@ -1272,9 +1334,11 @@ def chat_room_page(request, chat_id: int):
                 chat_title = api.full_name(u_data)
                 chat_avatar = api.get_media_url(u_data.get("avatar"))
                 chat_initials = api.make_initials(u_data)
+        else:
+            names[uid] = f"Пользователь #{uid}"
 
     if is_group:
-        chat_title = chat_obj.get("name") or "Групповой чат"
+        chat_title = (chat_obj or {}).get("name") or "Групповой чат"
         chat_initials = "ГР"
 
     import json as _json
