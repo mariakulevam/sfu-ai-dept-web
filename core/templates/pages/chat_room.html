@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Чат #{{ chat_id }}{% endblock %}
+{% block title %}{{ chat_title }}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -26,6 +26,7 @@
 .chat-room__send { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: #fff; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background var(--duration-fast) var(--ease); }
 .chat-room__send:hover:not(:disabled) { background: var(--color-primary-hover); }
 .chat-room__send:disabled { opacity: 0.4; cursor: not-allowed; }
+.chat-room__avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: var(--ikit-gradient); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
 </style>
 {% endblock %}
 
@@ -37,7 +38,7 @@
             <span class="crumbs__sep">/</span>
             <a href="{% url 'chats' %}">Чаты</a>
             <span class="crumbs__sep">/</span>
-            <span class="crumbs__current">Чат #{{ chat_id }}</span>
+            <span class="crumbs__current">{{ chat_title }}</span>
         </nav>
 
         {% if error %}
@@ -46,11 +47,17 @@
 
         <div class="chat-room">
             <div class="chat-room__header">
-                <div>
-                    <h3 style="margin: 0; font-size: 16px;">Чат #{{ chat_id }}</h3>
-                    <div class="chat-room__status" id="ws-status">
-                        <span class="chat-room__status-dot"></span>
-                        <span class="chat-room__status-text">Подключение…</span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="chat-room__avatar"
+                          {% if chat_avatar %}style="background-image: url('{{ chat_avatar }}'); background-size: cover; background-position: center;"{% endif %}>
+                        {% if not chat_avatar %}{{ chat_initials }}{% endif %}
+                    </span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px;">{{ chat_title }}</h3>
+                        <div class="chat-room__status" id="ws-status">
+                            <span class="chat-room__status-dot"></span>
+                            <span class="chat-room__status-text">Подключение…</span>
+                        </div>
                     </div>
                 </div>
                 <a href="{% url 'chats' %}" class="btn btn--ghost btn--sm">К списку</a>

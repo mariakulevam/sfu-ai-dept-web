@@ -1192,12 +1192,47 @@ def chat_start_direct(request, user_id: int):
     return redirect("chat_room", chat_id=chat["id"])
 
 
+@login_required_view
 def chats_page(request):
-    """Список чатов."""
+    """Список чатов с именами и аватарами собеседников."""
     token = _get_token(request)
+    me = _get_user(request) or {}
+    my_id = me.get("id")
     chats, error = _safe_call(request, api.list_chats, token)
+
+    enriched = []
+    for c in chats or []:
+        item = {**c}
+        if c.get("type") == "group":
+            item["display_name"] = c.get("name") or f"Группа {c.get('group_id', '')}".strip()
+            item["display_avatar"] = None
+            item["display_initials"] = "ГР"
+            item["is_group"] = True
+        else:
+            # Личный чат — находим собеседника (не себя)
+            other_id = None
+            for m in c.get("members", []):
+                if m.get("user_id") != my_id:
+                    other_id = m.get("user_id")
+                    break
+            if other_id:
+                u_data, _ = _safe_call(request, api.get_user, token, other_id)
+                if u_data:
+                    item["display_name"] = api.full_name(u_data)
+                    item["display_avatar"] = api.get_media_url(u_data.get("avatar"))
+                    item["display_initials"] = api.make_initials(u_data)
+                    item["display_role"] = api.ROLE_LABELS.get(u_data.get("role"), "")
+                else:
+                    item["display_name"] = "Собеседник"
+                    item["display_initials"] = "?"
+            else:
+                item["display_name"] = "Личный чат"
+                item["display_initials"] = "?"
+            item["is_group"] = False
+        enriched.append(item)
+
     return render(request, "pages/chats.html", {
-        "chats": chats or [],
+        "chats": enriched,
         "error": error,
     })
 
@@ -1209,14 +1244,22 @@ def chat_room_page(request, chat_id: int):
     user = _get_user(request) or {}
     messages, error = _safe_call(request, api.chat_messages, token, chat_id, limit=100)
 
-    # Карта id → имя участников (для отображения имён вместо «Пользователь #5»)
+    # Карта id → имя участников + данные собеседника для шапки
     names = {}
     chats, _ = _safe_call(request, api.list_chats, token)
     member_ids = []
+    chat_obj = None
     for c in chats or []:
         if c.get("id") == chat_id:
+            chat_obj = c
             member_ids = [m.get("user_id") for m in c.get("members", [])]
             break
+
+    chat_title = f"Чат #{chat_id}"
+    chat_avatar = None
+    chat_initials = "?"
+    is_group = chat_obj and chat_obj.get("type") == "group"
+
     for uid in member_ids:
         if uid == user.get("id"):
             names[uid] = "Вы"
@@ -1224,6 +1267,15 @@ def chat_room_page(request, chat_id: int):
         u_data, _ = _safe_call(request, api.get_user, token, uid)
         if u_data:
             names[uid] = api.short_name(u_data) or f"Пользователь #{uid}"
+            # Для личного чата — собеседник в шапку
+            if not is_group:
+                chat_title = api.full_name(u_data)
+                chat_avatar = api.get_media_url(u_data.get("avatar"))
+                chat_initials = api.make_initials(u_data)
+
+    if is_group:
+        chat_title = chat_obj.get("name") or "Групповой чат"
+        chat_initials = "ГР"
 
     import json as _json
     return render(request, "pages/chat_room.html", {
@@ -1232,6 +1284,9 @@ def chat_room_page(request, chat_id: int):
         "user": user,
         "ws_url": api.get_chat_ws_url(chat_id, token),
         "names_json": _json.dumps(names, ensure_ascii=False),
+        "chat_title": chat_title,
+        "chat_avatar": chat_avatar,
+        "chat_initials": chat_initials,
         "error": error,
     })
 
