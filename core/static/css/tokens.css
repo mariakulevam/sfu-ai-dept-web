@@ -71,6 +71,7 @@
   --color-surface: #FFFFFF;       /* карточки */
   --color-surface-soft: #F5F8FB;  /* мягкая подложка для секций */
   --color-surface-tint: #EFF7FA;  /* тонированная (с лёгким голубым) */
+  --color-surface-2: #F0F4F9;     /* запасная поверхность (бейджи, плашки) */
 
   /* Текст */
   --color-text: #0F1320;          /* основной — почти чёрный с холодным оттенком */
@@ -158,3 +159,89 @@
   --z-modal: 1000;
   --z-toast: 1100;
 }
+
+/* ============================================================
+   ТЁМНАЯ ТЕМА
+   Переопределяем фоны, поверхности, текст и бордеры.
+   Фирменные цвета ИКИТ (голубой/мятный) сохраняются как акценты,
+   но слегка осветляются для контраста на тёмном фоне.
+   ============================================================ */
+[data-theme="dark"] {
+  /* Акценты — чуть светлее для читаемости на тёмном */
+  --ikit-blue: #3FB0E8;
+  --ikit-blue-dark: #2E9AD0;
+  --ikit-blue-light: #63C0EE;
+  --ikit-mint: #5FD0BC;
+  --ikit-mint-dark: #4CC0AD;
+  --ikit-mint-light: #7FDccB;
+
+  --color-primary: var(--ikit-blue);
+  --color-primary-hover: var(--ikit-blue-light);
+  --color-secondary: var(--ikit-mint);
+  --color-secondary-hover: var(--ikit-mint-light);
+
+  /* Фон и поверхности — глубокий сине-серый, в тон палитре ИКИТ */
+  --color-bg: #0E1420;            /* основной фон — тёмный сине-графитовый */
+  --color-surface: #161E2E;       /* карточки */
+  --color-surface-soft: #131A28;  /* мягкая подложка секций */
+  --color-surface-tint: #1A2436;  /* тонированная */
+  --color-surface-2: #1C2638;     /* запасная поверхность */
+
+  /* Текст */
+  --color-text: #E8EDF5;          /* основной — почти белый */
+  --color-text-soft: #B4C0D4;     /* вторичный */
+  --color-text-muted: #7E8CA3;    /* подписи, мета */
+  --color-text-on-color: #FFFFFF;
+
+  /* Бордеры */
+  --color-border: #283449;
+  --color-border-strong: #3A4860;
+
+  /* Градиент-подложка приглушается */
+  --ikit-gradient-soft: linear-gradient(135deg,
+                                        rgba(63, 176, 232, 0.10) 0%,
+                                        rgba(95, 208, 188, 0.10) 100%);
+
+  /* Тени глубже (на тёмном нужен более тёмный «провал») */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+  /* Статусы — чуть ярче */
+  --color-success: #3FCB8E;
+  --color-warning: #F4B05A;
+  --color-danger: #F2646A;
+}
+
+/* Плавный переход при переключении темы */
+html, body, .card, .sidebar, .topbar, .site-footer,
+.input, .select, .btn, .feature-card, .staff-card, .contact-row {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* Кнопка-переключатель темы */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-soft);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.theme-toggle svg { width: 18px; height: 18px; }
+/* Показываем нужную иконку в зависимости от темы */
+.theme-toggle .icon-moon { display: inline; }
+.theme-toggle .icon-sun { display: none; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+[data-theme="dark"] .theme-toggle .icon-sun { display: inline; }

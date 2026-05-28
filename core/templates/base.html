@@ -9,6 +9,16 @@
 
     <link rel="icon" type="image/svg+xml" href="{% static 'img/ikit/sign-color.svg' %}">
 
+    <script>
+        // Применяем сохранённую тему сразу, до отрисовки — чтобы не было мигания
+        (function () {
+            try {
+                var t = localStorage.getItem('sfu-theme');
+                if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            } catch (e) {}
+        })();
+    </script>
+
     <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">

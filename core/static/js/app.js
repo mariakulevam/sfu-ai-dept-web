@@ -4,6 +4,22 @@
 (function () {
     'use strict';
 
+    // ── Переключатель темы (светлая / тёмная) ──────────────
+    const THEME_KEY = 'sfu-theme';
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                try { localStorage.setItem(THEME_KEY, 'light'); } catch (e) {}
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                try { localStorage.setItem(THEME_KEY, 'dark'); } catch (e) {}
+            }
+        });
+    }
+
     // ── Sidebar collapse (сворачивание) ───────────────────
     const COLLAPSE_KEY = 'sfu_sidebar_collapsed';
     const body = document.body;
