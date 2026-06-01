@@ -50,6 +50,10 @@
                    class="site-nav__link {% if request.resolver_match.url_name == 'chats' or request.resolver_match.url_name == 'chat_room' %}site-nav__link--active{% endif %}">
                     Чаты
                 </a>
+                <a href="{% url 'vkr_topics' %}"
+                   class="site-nav__link {% if request.resolver_match and 'vkr' in request.resolver_match.url_name %}site-nav__link--active{% endif %}">
+                    Темы ВКР
+                </a>
             {% endif %}
         </nav>
 

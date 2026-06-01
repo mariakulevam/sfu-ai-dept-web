@@ -149,6 +149,115 @@
                     </div>
                 </div>
 
+                <!-- Контакты (зависит от роли) -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card__body">
+                        <h3 style="margin-bottom: 8px;">Контактные данные</h3>
+                        <p class="text-muted" style="font-size: 14px; margin-bottom: 16px;">
+                            Эти данные видят сотрудники кафедры и преподаватели в соответствующих разделах
+                        </p>
+
+                        {% if profile_success %}
+                            <div class="alert alert--success" style="margin-bottom: 16px;">{{ profile_success }}</div>
+                        {% endif %}
+                        {% if profile_error %}
+                            <div class="alert alert--danger" style="margin-bottom: 16px;">{{ profile_error }}</div>
+                        {% endif %}
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_contacts">
+
+                            {% if user.role == 'student' or user.role == 'headman' %}
+                                <div class="field">
+                                    <label class="field__label" for="phone">Телефон</label>
+                                    <input class="input" type="tel" id="phone" name="phone"
+                                           value="{{ user.phone|default:'' }}"
+                                           placeholder="+7 (___) ___-__-__">
+                                </div>
+                                <div class="field">
+                                    <label class="field__label" for="telegram">Telegram</label>
+                                    <input class="input" type="text" id="telegram" name="telegram"
+                                           value="{{ user.telegram|default:'' }}"
+                                           placeholder="@username">
+                                </div>
+                                <div class="field">
+                                    <label class="field__label" for="vk">ВКонтакте</label>
+                                    <input class="input" type="text" id="vk" name="vk"
+                                           value="{{ user.vk|default:'' }}"
+                                           placeholder="id12345 или vk.com/...">
+                                </div>
+
+                            {% elif user.role == 'teacher' or user.role == 'deputy_head' %}
+                                <div class="field">
+                                    <label class="field__label" for="department">Кафедра</label>
+                                    <input class="input" type="text" id="department" name="department"
+                                           value="{{ user.department|default:'Системы искусственного интеллекта' }}">
+                                </div>
+                                <div class="field">
+                                    <label class="field__label">Должности (можно выбрать несколько)</label>
+                                    {% with positions=user.positions|default_if_none:'' %}
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        {% for code, label in teacher_position_options %}
+                                            <label style="display: flex; gap: 8px; align-items: center;">
+                                                <input type="checkbox" name="positions" value="{{ code }}"
+                                                       {% if code in positions %}checked{% endif %}>
+                                                {{ label }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                    {% endwith %}
+                                </div>
+                                <div class="field">
+                                    <label class="field__label" for="phone">Телефон</label>
+                                    <input class="input" type="tel" id="phone" name="phone"
+                                           value="{{ user.phone|default:'' }}"
+                                           placeholder="+7 (___) ___-__-__">
+                                </div>
+                                <div class="field">
+                                    <label class="field__label" for="cabinet">Кабинет</label>
+                                    <input class="input" type="text" id="cabinet" name="cabinet"
+                                           value="{{ user.cabinet|default:'' }}"
+                                           placeholder="УЛК-3, ауд. 419">
+                                </div>
+
+                            {% elif user.role == 'dean' %}
+                                <div class="field">
+                                    <label class="field__label" for="faculty">Институт / факультет</label>
+                                    <input class="input" type="text" id="faculty" name="faculty"
+                                           value="{{ user.faculty|default:'Институт космических и информационных технологий' }}">
+                                </div>
+                                <div class="field">
+                                    <label class="field__label" for="position">Должность</label>
+                                    <input class="input" type="text" id="position" name="position"
+                                           value="{{ user.dean_position|default:'' }}"
+                                           placeholder="Заведующий кафедрой">
+                                </div>
+                                <div class="field">
+                                    <label class="field__label" for="phone">Телефон</label>
+                                    <input class="input" type="tel" id="phone" name="phone"
+                                           value="{{ user.phone|default:'' }}"
+                                           placeholder="+7 (___) ___-__-__">
+                                </div>
+                                <div class="field">
+                                    <label class="field__label" for="cabinet">Кабинет</label>
+                                    <input class="input" type="text" id="cabinet" name="cabinet"
+                                           value="{{ user.cabinet|default:'' }}"
+                                           placeholder="УЛК-3, ауд. 419">
+                                </div>
+                            {% else %}
+                                <p class="text-muted">Для вашей роли нет редактируемых контактов.</p>
+                            {% endif %}
+
+                            {% if user.role != 'admin' %}
+                                <button type="submit" class="btn btn--primary" style="margin-top: 8px;">
+                                    Сохранить контакты
+                                </button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Смена пароля -->
                 <div class="card">
                     <div class="card__body">

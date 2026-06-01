@@ -84,6 +84,32 @@
             </div>
 
             <div class="field">
+                <label class="field__label" for="group_id">
+                    Учебная группа
+                </label>
+                {% if groups %}
+                    <select class="input" id="group_id" name="group_id" required>
+                        <option value="" {% if not form.group_id %}selected{% endif %} disabled>
+                            — выберите свою группу —
+                        </option>
+                        {% for g in groups %}
+                            <option value="{{ g.id }}"
+                                    {% if form.group_id == g.id|stringformat:"s" %}selected{% endif %}>
+                                {{ g.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                {% else %}
+                    <input class="input" type="number" id="group_id" name="group_id"
+                           value="{{ form.group_id|default:'' }}"
+                           placeholder="ID группы" required min="1">
+                    <span class="field__hint">
+                        Не удалось загрузить список групп. Введите числовой ID, который вам сообщил староста или заведующий.
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="field">
                 <label class="field__label" for="password">Пароль</label>
                 <input class="input" type="password" id="password" name="password"
                        placeholder="не короче 6 символов" required>

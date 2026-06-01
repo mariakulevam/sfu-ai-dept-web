@@ -417,18 +417,34 @@ def logout_page(request):
 
 
 def register_page(request):
-    """Регистрация нового пользователя (роль автоматически student)."""
+    """Регистрация нового пользователя (роль автоматически student).
+
+    Backend требует group_id — студент сразу указывает свою учебную группу.
+    Список групп подгружается через публичный (?) или авторизованный
+    эндпоинт; здесь используется api.list_groups без токена. Если backend
+    требует токен — нужно сделать обёртку-эндпоинт на стороне Django.
+    """
     if _get_token(request):
         return redirect("home")
 
     error: Optional[str] = None
-    form_data = {"name": "", "surname": "", "patronymic": "", "email": ""}
+    form_data = {"name": "", "surname": "", "patronymic": "", "email": "",
+                 "group_id": ""}
+
+    # Список групп для выпадающего меню. Пробуем без токена (если сервер
+    # отдаёт публично), при ошибке оставляем пустой список — поле останется
+    # просто числовым вводом как фолбэк.
+    try:
+        groups = api.list_groups(token="") or []
+    except Exception:
+        groups = []
 
     if request.method == "POST":
         form_data["name"] = request.POST.get("name", "").strip()
         form_data["surname"] = request.POST.get("surname", "").strip()
         form_data["patronymic"] = request.POST.get("patronymic", "").strip()
         form_data["email"] = request.POST.get("email", "").strip()
+        form_data["group_id"] = request.POST.get("group_id", "").strip()
         password = request.POST.get("password", "")
         confirm = request.POST.get("confirm_password", "")
 
@@ -436,6 +452,8 @@ def register_page(request):
             error = "Заполните имя и фамилию."
         elif not form_data["email"]:
             error = "Укажите e-mail."
+        elif not form_data["group_id"]:
+            error = "Выберите учебную группу."
         elif not password:
             error = "Придумайте пароль."
         elif len(password) < 6:
@@ -443,30 +461,74 @@ def register_page(request):
         elif password != confirm:
             error = "Пароль и подтверждение не совпадают."
         else:
-            _, err = _safe_call(
-                request, api.register_user,
-                form_data["name"],
-                form_data["surname"],
-                form_data["email"],
-                password,
-                patronymic=form_data["patronymic"] or None,
-            )
-            if err:
-                error = err
-            else:
-                # Регистрация прошла — сразу логиним пользователя
-                tokens, login_err = _safe_call(request, api.login_user, form_data["email"], password)
-                if tokens:
-                    request.session["access_token"] = tokens["access_token"]
-                    request.session["refresh_token"] = tokens.get("refresh_token", "")
-                    user, _ = _safe_call(request, api.get_current_user, tokens["access_token"])
-                    if user:
-                        _set_session_user(request, user)
-                    return redirect("home")
-                # Если автологин не сработал — отправляем на форму входа
-                return redirect("login")
+            try:
+                group_id_int = int(form_data["group_id"])
+            except ValueError:
+                error = "Некорректный идентификатор группы."
+                group_id_int = None
+            if group_id_int is not None:
+                _, err = _safe_call(
+                    request, api.register_user,
+                    form_data["name"],
+                    form_data["surname"],
+                    form_data["email"],
+                    password,
+                    group_id_int,
+                    patronymic=form_data["patronymic"] or None,
+                )
+                if err:
+                    error = err
+                else:
+                    # Регистрация прошла — сразу логиним пользователя
+                    tokens, login_err = _safe_call(
+                        request, api.login_user, form_data["email"], password,
+                    )
+                    if tokens:
+                        request.session["access_token"] = tokens["access_token"]
+                        request.session["refresh_token"] = tokens.get("refresh_token", "")
+                        user, _ = _safe_call(
+                            request, api.get_current_user, tokens["access_token"],
+                        )
+                        if user:
+                            _set_session_user(request, user)
+                        return redirect("home")
+                    # Если автологин не сработал — отправляем на форму входа
+                    return redirect("login")
 
-    return render(request, "pages/register.html", {"error": error, "form": form_data})
+    return render(request, "pages/register.html", {
+        "error": error, "form": form_data, "groups": groups,
+    })
+
+
+def reset_password_page(request):
+    """Запрос сброса пароля.
+
+    Отправляет на серверную часть запрос /auth/reset-password; backend
+    генерирует новый пароль и присылает его на указанный email. Сама
+    форма всегда показывает один и тот же успех — это сделано осознанно,
+    чтобы не подсказывать злоумышленнику, существует ли учётная запись.
+    """
+    if _get_token(request):
+        return redirect("home")
+
+    success: bool = False
+    error: Optional[str] = None
+    email = ""
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip()
+        if not email or "@" not in email:
+            error = "Укажите корректный e-mail."
+        else:
+            _, err = _safe_call(request, api.reset_password, email)
+            # По соображениям безопасности показываем «успех» в любом случае —
+            # ошибка отображается только при сетевых сбоях.
+            if err and "сети" in err.lower():
+                error = "Не удалось связаться с сервером. Попробуйте позже."
+            else:
+                success = True
+    return render(request, "pages/reset_password.html", {
+        "error": error, "success": success, "email": email,
+    })
 
 
 @login_required_view
@@ -503,6 +565,55 @@ def profile_page(request):
                     password_error = err
                 else:
                     password_success = "Пароль успешно изменён"
+
+        # ── Контакты по ролевому профилю ──
+        elif action == "update_contacts":
+            role = user.get("role")
+            contacts_payload = {
+                "phone":    request.POST.get("phone", "").strip() or None,
+                "telegram": request.POST.get("telegram", "").strip() or None,
+                "vk":       request.POST.get("vk", "").strip() or None,
+                "department": request.POST.get("department", "").strip() or None,
+                "cabinet":  request.POST.get("cabinet", "").strip() or None,
+                "faculty":  request.POST.get("faculty", "").strip() or None,
+                "position": request.POST.get("position", "").strip() or None,
+                "positions": request.POST.getlist("positions") or None,
+            }
+            try:
+                if role in ("student", "headman"):
+                    updated = api.update_student_profile(
+                        token,
+                        phone=contacts_payload["phone"],
+                        telegram=contacts_payload["telegram"],
+                        vk=contacts_payload["vk"],
+                    )
+                elif role in ("teacher", "deputy_head"):
+                    updated = api.update_teacher_profile(
+                        token,
+                        department=contacts_payload["department"],
+                        positions=contacts_payload["positions"],
+                        phone=contacts_payload["phone"],
+                        cabinet=contacts_payload["cabinet"],
+                    )
+                elif role == "dean":
+                    updated = api.update_dean_profile(
+                        token,
+                        faculty=contacts_payload["faculty"],
+                        position=contacts_payload["position"],
+                        phone=contacts_payload["phone"],
+                        cabinet=contacts_payload["cabinet"],
+                    )
+                else:
+                    updated = None
+                    profile_error = "Для роли «{}» нет редактируемых контактов.".format(
+                        api.ROLE_LABELS.get(role, role))
+            except Exception as exc:
+                profile_error = str(exc) or "Не удалось сохранить контакты"
+                updated = None
+            if updated is not None:
+                _set_session_user(request, updated)
+                user = updated
+                profile_success = "Контакты обновлены"
 
         # ── Редактирование профиля (имя, email) ──
         elif action == "update_profile":
@@ -564,6 +675,7 @@ def profile_page(request):
     return render(request, "pages/profile.html", {
         "user": user,
         "recent_announcements": recent_announcements or [],
+        "teacher_position_options": list(api.TEACHER_POSITION_LABELS.items()),
         "password_error": password_error,
         "password_success": password_success,
         "profile_error": profile_error,
@@ -1353,6 +1465,162 @@ def chat_room_page(request, chat_id: int):
         "chat_initials": chat_initials,
         "error": error,
     })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  ВКР — темы выпускных квалификационных работ (новый модуль)
+# ═══════════════════════════════════════════════════════════════
+
+@login_required_view
+def vkr_topics_page(request):
+    """Лента тем ВКР.
+
+    Что видит пользователь зависит от роли:
+      • student / headman / teacher — только одобренные темы
+        (как «банк тем для распределения») и свои предложенные;
+      • dean — одобренные темы;
+      • deputy_head / admin — все темы с фильтром по статусу.
+    """
+    token = _get_token(request)
+    user = _get_user(request) or {}
+    role = user.get("role")
+    status_filter = request.GET.get("status") or None  # pending|approved|rejected
+
+    if api.can_view_all_vkr_topics(role):
+        topics, _ = _safe_call(request, api.list_all_vkr_topics, token, status_filter)
+    elif api.can_view_approved_vkr_topics(role):
+        topics, _ = _safe_call(request, api.list_approved_vkr_topics, token)
+    else:
+        # Студенту/преподавателю показываем одобренные (общий банк тем)
+        topics, _ = _safe_call(request, api.list_approved_vkr_topics, token)
+
+    topics = topics or []
+    # Обогащаем темы человекочитаемой меткой статуса и бейджем
+    for t in topics:
+        st = t.get("status")
+        t["status_label"] = api.VKR_STATUS_LABELS.get(st, st)
+        t["status_badge"] = api.VKR_STATUS_BADGES.get(st, "neutral")
+
+    return render(request, "pages/vkr_topics.html", {
+        "user": user,
+        "topics": topics,
+        "status_filter": status_filter,
+        "status_labels": api.VKR_STATUS_LABELS,
+        "can_propose": api.can_propose_vkr_topic(role),
+        "can_review": api.can_review_vkr_topics(role),
+        "can_view_all": api.can_view_all_vkr_topics(role),
+    })
+
+
+@login_required_view
+def vkr_my_topics_page(request):
+    """Темы, предложенные текущим пользователем."""
+    token = _get_token(request)
+    user = _get_user(request) or {}
+    topics, _ = _safe_call(request, api.list_my_vkr_topics, token)
+    topics = topics or []
+    for t in topics:
+        st = t.get("status")
+        t["status_label"] = api.VKR_STATUS_LABELS.get(st, st)
+        t["status_badge"] = api.VKR_STATUS_BADGES.get(st, "neutral")
+    return render(request, "pages/vkr_my_topics.html", {
+        "user": user,
+        "topics": topics,
+        "can_propose": api.can_propose_vkr_topic(user.get("role")),
+    })
+
+
+@login_required_view
+def vkr_topic_detail_page(request, topic_id: int):
+    """Детальный просмотр темы ВКР."""
+    token = _get_token(request)
+    user = _get_user(request) or {}
+    topic, err = _safe_call(request, api.get_vkr_topic, token, topic_id)
+    if err or not topic:
+        raise Http404("Тема ВКР не найдена.")
+    st = topic.get("status")
+    topic["status_label"] = api.VKR_STATUS_LABELS.get(st, st)
+    topic["status_badge"] = api.VKR_STATUS_BADGES.get(st, "neutral")
+
+    can_review = (
+        api.can_review_vkr_topics(user.get("role"))
+        and st == "pending"
+    )
+    return render(request, "pages/vkr_topic_detail.html", {
+        "user": user,
+        "topic": topic,
+        "can_review": can_review,
+    })
+
+
+@login_required_view
+def vkr_propose_page(request):
+    """Форма предложения новой темы ВКР."""
+    user = _get_user(request) or {}
+    role = user.get("role")
+    if not api.can_propose_vkr_topic(role):
+        return render(request, "pages/403.html", status=403)
+
+    token = _get_token(request)
+    error: Optional[str] = None
+    form_data = {"title": "", "description": ""}
+
+    if request.method == "POST":
+        form_data["title"] = request.POST.get("title", "").strip()
+        form_data["description"] = request.POST.get("description", "").strip()
+        if not form_data["title"]:
+            error = "Укажите название темы."
+        elif len(form_data["title"]) > 500:
+            error = "Название слишком длинное (максимум 500 символов)."
+        else:
+            topic, err = _safe_call(
+                request, api.propose_vkr_topic,
+                token,
+                form_data["title"],
+                form_data["description"] or None,
+            )
+            if err:
+                error = err
+            else:
+                return redirect("vkr_topic_detail", topic_id=topic["id"])
+
+    return render(request, "pages/vkr_propose.html", {
+        "user": user,
+        "form": form_data,
+        "error": error,
+    })
+
+
+@require_POST
+@login_required_view
+def vkr_topic_review(request, topic_id: int):
+    """Одобрить или отклонить тему ВКР (только deputy_head)."""
+    user = _get_user(request) or {}
+    if not api.can_review_vkr_topics(user.get("role")):
+        return render(request, "pages/403.html", status=403)
+
+    token = _get_token(request)
+    action = request.POST.get("action")  # approve | reject
+    comment = request.POST.get("comment", "").strip()
+    approved = (action == "approve")
+
+    if not approved and not comment:
+        # backend требует комментарий при отклонении; вернёмся на детали с ошибкой
+        topic, _ = _safe_call(request, api.get_vkr_topic, token, topic_id)
+        st = (topic or {}).get("status")
+        if topic:
+            topic["status_label"] = api.VKR_STATUS_LABELS.get(st, st)
+            topic["status_badge"] = api.VKR_STATUS_BADGES.get(st, "neutral")
+        return render(request, "pages/vkr_topic_detail.html", {
+            "user": user, "topic": topic, "can_review": True,
+            "review_error": "При отклонении необходимо указать причину.",
+        })
+
+    _, err = _safe_call(
+        request, api.review_vkr_topic, token, topic_id,
+        approved=approved, comment=comment or None,
+    )
+    return redirect("vkr_topic_detail", topic_id=topic_id)
 
 
 # ═══════════════════════════════════════════════════════════════

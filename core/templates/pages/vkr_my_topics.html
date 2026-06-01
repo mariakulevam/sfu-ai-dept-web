@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои темы ВКР{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <a href="{% url 'vkr_topics' %}">Темы ВКР</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Мои темы</span>
+        </nav>
+
+        <div class="section-head-row">
+            <div class="section-header">
+                <h1 class="section-title">Мои предложенные темы</h1>
+                <p class="section-subtitle">Темы, которые вы отправили на рассмотрение заместителя заведующего кафедрой</p>
+            </div>
+            {% if can_propose %}
+                <a href="{% url 'vkr_propose' %}" class="btn btn--primary">+ Предложить тему</a>
+            {% endif %}
+        </div>
+
+        {% if topics %}
+            <div class="grid grid--2">
+                {% for topic in topics %}
+                    <article class="card">
+                        <div class="card__body">
+                            <div class="card__meta">
+                                <span class="badge badge--{{ topic.status_badge }} badge--dot">{{ topic.status_label }}</span>
+                                <span class="muted">№{{ topic.id }}</span>
+                            </div>
+                            <h3 class="card__title">
+                                <a href="{% url 'vkr_topic_detail' topic.id %}">{{ topic.title }}</a>
+                            </h3>
+                            {% if topic.description %}
+                                <p class="card__text">{{ topic.description|truncatechars:200 }}</p>
+                            {% endif %}
+                            {% if topic.head_comment %}
+                                <div class="alert alert--warning" style="margin-top: 12px;">
+                                    <strong>Комментарий заместителя заведующего:</strong>
+                                    <div>{{ topic.head_comment }}</div>
+                                </div>
+                            {% endif %}
+                            <div class="card__footer">
+                                <span class="muted">Обновлено: {{ topic.updated_at|slice:":10" }}</span>
+                                <a href="{% url 'vkr_topic_detail' topic.id %}" class="btn btn--ghost btn--sm">
+                                    Подробнее →
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p class="muted">Вы пока не предлагали тем.</p>
+                {% if can_propose %}
+                    <a href="{% url 'vkr_propose' %}" class="btn btn--primary" style="margin-top: 16px;">
+                        Предложить тему
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

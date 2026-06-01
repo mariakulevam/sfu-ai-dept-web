@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Предложить тему ВКР{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container container--narrow">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <a href="{% url 'vkr_topics' %}">Темы ВКР</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Новая тема</span>
+        </nav>
+
+        <div class="section-header">
+            <h1 class="section-title">Предложить тему выпускной работы</h1>
+            <p class="section-subtitle">
+                После отправки тема попадает к заместителю заведующего кафедрой на рассмотрение.
+                Замзав может одобрить тему — тогда она появится в общем банке тем — или отклонить с комментарием.
+            </p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert--danger" style="margin-bottom: 24px;">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" class="form-stack" style="max-width: 720px;">
+            {% csrf_token %}
+            <label class="field">
+                <span class="field__label">Название темы <span class="required">*</span></span>
+                <input type="text" name="title" class="input" maxlength="500"
+                       required value="{{ form.title }}"
+                       placeholder="Например: Разработка системы рекомендаций фильмов на основе матричной факторизации">
+                <span class="field__hint">До 500 символов. Чётко сформулируйте задачу и предметную область.</span>
+            </label>
+
+            <label class="field">
+                <span class="field__label">Описание (необязательно)</span>
+                <textarea name="description" rows="8" class="input"
+                          placeholder="Цель работы, основные задачи, ожидаемые результаты, требования к исполнителю...">{{ form.description }}</textarea>
+                <span class="field__hint">Опционально, но желательно. Помогает замзав принять решение быстрее.</span>
+            </label>
+
+            <div class="form-actions" style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn--primary">Отправить на рассмотрение</button>
+                <a href="{% url 'vkr_topics' %}" class="btn btn--ghost">Отмена</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ topic.title|truncatechars:60 }} — тема ВКР{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container container--narrow">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <a href="{% url 'vkr_topics' %}">Темы ВКР</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">№{{ topic.id }}</span>
+        </nav>
+
+        <article class="card card--lg">
+            <div class="card__body">
+                <div class="card__meta">
+                    <span class="badge badge--{{ topic.status_badge }} badge--dot">{{ topic.status_label }}</span>
+                    <span class="muted">№{{ topic.id }}</span>
+                    <span class="muted">·</span>
+                    <span class="muted">создана: {{ topic.created_at|slice:":10" }}</span>
+                </div>
+
+                <h1 class="card__title" style="font-size: 28px; line-height: 1.3;">{{ topic.title }}</h1>
+
+                {% if topic.description %}
+                    <div class="prose" style="margin-top: 16px;">
+                        {{ topic.description|linebreaks }}
+                    </div>
+                {% else %}
+                    <p class="muted" style="margin-top: 16px;">Описание не задано.</p>
+                {% endif %}
+
+                <hr class="divider" style="margin: 24px 0;">
+
+                <div class="meta-list">
+                    <div class="meta-list__row">
+                        <span class="meta-list__label">Предложил(а):</span>
+                        <span class="meta-list__value">
+                            {{ topic.proposed_by.surname }}
+                            {{ topic.proposed_by.name }}
+                            {% if topic.proposed_by.patronymic %}{{ topic.proposed_by.patronymic }}{% endif %}
+                        </span>
+                    </div>
+                    {% if topic.student_id %}
+                        <div class="meta-list__row">
+                            <span class="meta-list__label">Закреплена за студентом:</span>
+                            <span class="meta-list__value">ID {{ topic.student_id }}</span>
+                        </div>
+                    {% endif %}
+                    {% if topic.head_comment %}
+                        <div class="meta-list__row">
+                            <span class="meta-list__label">Комментарий замзав:</span>
+                            <span class="meta-list__value">{{ topic.head_comment }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if can_review %}
+                    <hr class="divider" style="margin: 24px 0;">
+                    <h3 class="h3">Рассмотрение темы</h3>
+
+                    {% if review_error %}
+                        <div class="alert alert--danger" style="margin-bottom: 16px;">{{ review_error }}</div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'vkr_topic_review' topic.id %}" class="form-stack">
+                        {% csrf_token %}
+                        <label class="field">
+                            <span class="field__label">Комментарий (обязателен при отклонении)</span>
+                            <textarea name="comment" rows="3" class="input"
+                                      placeholder="Например: тема дублирует уже одобренную, либо слишком широкая..."></textarea>
+                        </label>
+                        <div class="form-actions" style="display: flex; gap: 8px;">
+                            <button type="submit" name="action" value="approve" class="btn btn--primary">
+                                Одобрить
+                            </button>
+                            <button type="submit" name="action" value="reject" class="btn btn--danger-outline">
+                                Отклонить
+                            </button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

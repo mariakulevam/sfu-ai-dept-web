@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Доступ запрещён{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container container--narrow" style="text-align: center; padding: 80px 16px;">
+        <div class="error-code" style="font-size: 96px; font-weight: 700; opacity: 0.2;">403</div>
+        <h1 class="section-title">Доступ запрещён</h1>
+        <p class="section-subtitle" style="max-width: 520px; margin: 12px auto 32px;">
+            У вашей учётной записи недостаточно прав для просмотра этой страницы.
+            Если считаете, что это ошибка — обратитесь к администратору кафедры.
+        </p>
+        <div style="display: inline-flex; gap: 8px;">
+            <a href="{% url 'home' %}" class="btn btn--primary">На главную</a>
+            <a href="{% url 'profile' %}" class="btn btn--ghost">В личный кабинет</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

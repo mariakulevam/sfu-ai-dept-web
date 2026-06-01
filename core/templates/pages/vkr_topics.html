@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Темы ВКР{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="crumbs">
+            <a href="{% url 'home' %}">Главная</a>
+            <span class="crumbs__sep">/</span>
+            <span class="crumbs__current">Темы ВКР</span>
+        </nav>
+
+        <div class="section-head-row">
+            <div class="section-header">
+                <h1 class="section-title">Темы выпускных квалификационных работ</h1>
+                <p class="section-subtitle">
+                    {% if can_view_all %}
+                        Все предложенные темы. Используйте фильтр, чтобы отобрать темы по статусу.
+                    {% else %}
+                        Банк одобренных тем для распределения между студентами.
+                    {% endif %}
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <a href="{% url 'vkr_my_topics' %}" class="btn btn--ghost">Мои темы</a>
+                {% if can_propose %}
+                    <a href="{% url 'vkr_propose' %}" class="btn btn--primary">+ Предложить тему</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if can_view_all %}
+            <div class="tabs" style="margin-bottom: 24px;">
+                <a href="{% url 'vkr_topics' %}"
+                   class="tab {% if not status_filter %}tab--active{% endif %}">Все</a>
+                <a href="?status=pending"
+                   class="tab {% if status_filter == 'pending' %}tab--active{% endif %}">На рассмотрении</a>
+                <a href="?status=approved"
+                   class="tab {% if status_filter == 'approved' %}tab--active{% endif %}">Одобренные</a>
+                <a href="?status=rejected"
+                   class="tab {% if status_filter == 'rejected' %}tab--active{% endif %}">Отклонённые</a>
+            </div>
+        {% endif %}
+
+        {% if topics %}
+            <div class="grid grid--2">
+                {% for topic in topics %}
+                    <article class="card">
+                        <div class="card__body">
+                            <div class="card__meta">
+                                <span class="badge badge--{{ topic.status_badge }} badge--dot">{{ topic.status_label }}</span>
+                                <span class="muted">№{{ topic.id }}</span>
+                            </div>
+                            <h3 class="card__title">
+                                <a href="{% url 'vkr_topic_detail' topic.id %}">{{ topic.title }}</a>
+                            </h3>
+                            {% if topic.description %}
+                                <p class="card__text">{{ topic.description|truncatechars:160 }}</p>
+                            {% endif %}
+                            <div class="card__footer">
+                                <span class="muted">
+                                    Предложил(а):
+                                    {{ topic.proposed_by.surname }} {{ topic.proposed_by.name|slice:":1" }}.
+                                </span>
+                                <a href="{% url 'vkr_topic_detail' topic.id %}" class="btn btn--ghost btn--sm">
+                                    Подробнее →
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p class="muted">Тем пока нет.</p>
+                {% if can_propose %}
+                    <a href="{% url 'vkr_propose' %}" class="btn btn--primary" style="margin-top: 16px;">
+                        Предложить первую тему
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

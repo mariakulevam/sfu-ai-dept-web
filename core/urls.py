@@ -44,4 +44,14 @@ urlpatterns = [
     path("chats/new/", views.chat_new_page, name="chat_new"),
     path("chats/start/<int:user_id>/", views.chat_start_direct, name="chat_start_direct"),
     path("chats/<int:chat_id>/", views.chat_room_page, name="chat_room"),
+
+    # Темы ВКР
+    path("vkr/", views.vkr_topics_page, name="vkr_topics"),
+    path("vkr/my/", views.vkr_my_topics_page, name="vkr_my_topics"),
+    path("vkr/new/", views.vkr_propose_page, name="vkr_propose"),
+    path("vkr/<int:topic_id>/", views.vkr_topic_detail_page, name="vkr_topic_detail"),
+    path("vkr/<int:topic_id>/review/", views.vkr_topic_review, name="vkr_topic_review"),
+
+    # Сброс пароля
+    path("reset-password/", views.reset_password_page, name="reset_password"),
 ]

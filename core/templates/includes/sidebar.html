@@ -143,6 +143,18 @@
                 <span>Чаты</span>
             </a>
 
+            <div class="sidebar__group-title">Учебная работа</div>
+
+            <a href="{% url 'vkr_topics' %}"
+               class="sidebar__link {% if request.resolver_match and 'vkr' in request.resolver_match.url_name %}sidebar__link--active{% endif %}"
+               title="Темы ВКР">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>Темы ВКР</span>
+            </a>
+
         </nav>
 
         <div class="sidebar__footer">
