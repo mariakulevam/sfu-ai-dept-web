@@ -1196,55 +1196,96 @@ def make_initials(user_or_name) -> str:
     return "·"
 
 
-def can_create_content(role: Optional[str]) -> bool:
-    """Кто имеет право создавать объявления и события.
-
-    По новой версии backend объявления могут создавать также deputy_head
-    и dean (раньше только teacher/headman/admin).
-    """
-    return role in {"teacher", "headman", "admin", "deputy_head", "dean"}
+def can_create_announcement(role: Optional[str]) -> bool:
+    """POST /announcements — headman, teacher, deputy_head, dean, admin."""
+    return role in {"headman", "teacher", "deputy_head", "dean", "admin"}
 
 
-def can_upload_documents(role: Optional[str]) -> bool:
-    """Кто загружает документы."""
-    return role in {"teacher", "headman", "admin", "deputy_head", "dean"}
-
-
-def can_manage_attendance(role: Optional[str]) -> bool:
-    """Кто работает с QR-токенами."""
-    return role in {"teacher", "headman"}
-
-
-def can_manage_announcements(role: Optional[str]) -> bool:
-    """Кто архивирует, восстанавливает, удаляет объявления."""
+def can_archive_announcement(role: Optional[str]) -> bool:
+    """PATCH /announcements/{id}/archive — headman, deputy_head, dean, admin."""
     return role in {"headman", "deputy_head", "dean", "admin"}
 
 
+def can_restore_announcement(role: Optional[str]) -> bool:
+    """PATCH /announcements/{id}/restore — только dean, admin."""
+    return role in {"dean", "admin"}
+
+
+def can_create_event(role: Optional[str]) -> bool:
+    """POST /events — headman, teacher, deputy_head, dean, admin."""
+    return role in {"headman", "teacher", "deputy_head", "dean", "admin"}
+
+
+def can_upload_documents(role: Optional[str]) -> bool:
+    """POST /documents — teacher, deputy_head, dean, admin (без headman!)."""
+    return role in {"teacher", "deputy_head", "dean", "admin"}
+
+
+def can_manage_attendance(role: Optional[str]) -> bool:
+    """POST /attendance/token и /attendance/manual — teacher, headman, deputy_head."""
+    return role in {"teacher", "headman", "deputy_head"}
+
+
+def can_scan_qr(role: Optional[str]) -> bool:
+    """POST /attendance/scan/{token} — только student и headman."""
+    return role in {"student", "headman"}
+
+
+def can_send_messages(role: Optional[str]) -> bool:
+    """POST /messages — headman, teacher, deputy_head, admin."""
+    return role in {"headman", "teacher", "deputy_head", "admin"}
+
+
+def can_sync_lessons(role: Optional[str]) -> bool:
+    """POST /lessons/sync — только dean, admin."""
+    return role in {"dean", "admin"}
+
+
+def can_manage_groups_streams(role: Optional[str]) -> bool:
+    """POST/PATCH/DELETE /groups и /streams — dean, admin."""
+    return role in {"dean", "admin"}
+
+
+def can_assign_student_group(role: Optional[str]) -> bool:
+    """PATCH /users/{id}/group — только dean."""
+    return role == "dean"
+
+
 def can_manage_users(role: Optional[str]) -> bool:
-    """Кто может добавлять и удалять сотрудников кафедры. Только администратор."""
+    """POST/DELETE /users — только admin."""
     return role == "admin"
 
 
 def can_propose_vkr_topic(role: Optional[str]) -> bool:
-    """Кто может предложить тему ВКР: студент, староста, преподаватель,
-    заместитель заведующего (для тем, не привязанных к конкретному студенту)."""
+    """POST /vkr/topics — student, headman, teacher, deputy_head."""
     return role in {"student", "headman", "teacher", "deputy_head"}
 
 
 def can_review_vkr_topics(role: Optional[str]) -> bool:
-    """Кто одобряет/отклоняет темы ВКР. Только заместитель заведующего."""
+    """POST /vkr/topics/{id}/review — только deputy_head."""
     return role == "deputy_head"
 
 
 def can_view_all_vkr_topics(role: Optional[str]) -> bool:
-    """Кто видит все темы ВКР (включая черновики и отклонённые).
-    Замзав и админ; декан видит только одобренные."""
+    """GET /vkr/topics — deputy_head, admin."""
     return role in {"deputy_head", "admin"}
 
 
 def can_view_approved_vkr_topics(role: Optional[str]) -> bool:
-    """Кто видит одобренные темы ВКР."""
-    return role in {"deputy_head", "admin", "dean"}
+    """GET /vkr/topics/approved — deputy_head, dean, admin."""
+    return role in {"deputy_head", "dean", "admin"}
+
+
+# ── Алиасы для обратной совместимости с уже написанными view-функциями ──
+
+def can_create_content(role: Optional[str]) -> bool:
+    """Алиас: общий флаг «может создавать объявления или события»."""
+    return can_create_announcement(role) or can_create_event(role)
+
+
+def can_manage_announcements(role: Optional[str]) -> bool:
+    """Алиас: общий флаг «может управлять объявлениями» (для шапки/меню)."""
+    return can_create_announcement(role) or can_archive_announcement(role)
 
 
 def humanize_size(size_bytes: Optional[int]) -> str:

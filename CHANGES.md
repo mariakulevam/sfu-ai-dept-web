@@ -91,3 +91,26 @@ docker compose up -d
 ```
 Если БД бэка ещё не накатила новые миграции — нужно сначала запустить
 `alembic upgrade head` со стороны Ритиной части.
+
+## Доп. правки: выравнивание с матрицей прав (PERMISSIONS.md)
+
+Уточнены и доукомплектованы хелперы прав в `core/services/api_client.py`,
+чтобы фронт не показывал кнопки тем, кому бэк всё равно вернёт 403.
+
+Конкретно:
+- `can_upload_documents` — убран `headman` (POST /documents для headman недоступен).
+- `can_manage_attendance` — добавлен `deputy_head` (он тоже выдаёт QR-токены
+  и проставляет посещаемость вручную).
+- Прежний широкий `can_manage_announcements` разделён на:
+  - `can_create_announcement` (headman, teacher, deputy_head, dean, admin);
+  - `can_archive_announcement` (headman, deputy_head, dean, admin);
+  - `can_restore_announcement` (только dean, admin).
+  Старая функция `can_manage_announcements` оставлена как алиас для
+  обратной совместимости.
+- Добавлены новые хелперы: `can_create_event`, `can_scan_qr`,
+  `can_send_messages`, `can_sync_lessons`, `can_manage_groups_streams`,
+  `can_assign_student_group`.
+
+В `core/views.py` все эти флаги дополнительно прокидываются в общий
+контекст пользователя (`_get_user_context`), так что в любом шаблоне теперь
+доступны переменные вида `{{ request.session.user.can_archive_announcement }}`.

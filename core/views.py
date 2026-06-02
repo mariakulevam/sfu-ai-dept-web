@@ -90,10 +90,23 @@ def _set_session_user(request, user: Dict[str, Any]) -> None:
         "avatar_url": avatar_url,
         "group_name": group_name,
         "can_create_content": api.can_create_content(user.get("role")),
+        "can_create_announcement": api.can_create_announcement(user.get("role")),
+        "can_create_event": api.can_create_event(user.get("role")),
+        "can_archive_announcement": api.can_archive_announcement(user.get("role")),
+        "can_restore_announcement": api.can_restore_announcement(user.get("role")),
         "can_upload_documents": api.can_upload_documents(user.get("role")),
         "can_manage_attendance": api.can_manage_attendance(user.get("role")),
+        "can_scan_qr": api.can_scan_qr(user.get("role")),
+        "can_send_messages": api.can_send_messages(user.get("role")),
+        "can_sync_lessons": api.can_sync_lessons(user.get("role")),
+        "can_manage_groups_streams": api.can_manage_groups_streams(user.get("role")),
+        "can_assign_student_group": api.can_assign_student_group(user.get("role")),
         "can_manage_announcements": api.can_manage_announcements(user.get("role")),
         "can_manage_users": api.can_manage_users(user.get("role")),
+        "can_propose_vkr_topic": api.can_propose_vkr_topic(user.get("role")),
+        "can_review_vkr_topics": api.can_review_vkr_topics(user.get("role")),
+        "can_view_all_vkr_topics": api.can_view_all_vkr_topics(user.get("role")),
+        "can_view_approved_vkr_topics": api.can_view_approved_vkr_topics(user.get("role")),
     }
 
 
@@ -1200,12 +1213,40 @@ def schedule_page(request):
         {"day": 6, "name": "Суббота",     "lessons": by_day[6]},
     ]
 
+    # Определяем выбранную группу/преподавателя для подсветки в форме
+    selected_group_id: Optional[int] = None
+    selected_teacher_id: Optional[int] = None
+    if current_source.startswith("group:"):
+        try:
+            selected_group_id = int(current_source.split(":", 1)[1])
+        except (ValueError, IndexError):
+            selected_group_id = None
+    elif current_source.startswith("teacher:"):
+        try:
+            selected_teacher_id = int(current_source.split(":", 1)[1])
+        except (ValueError, IndexError):
+            selected_teacher_id = None
+
+    # Имя текущей просматриваемой группы + флаг выбора (типобезопасно, в Python)
+    current_group_name: Optional[str] = None
+    for g in (groups_data or []):
+        try:
+            is_sel = (int(g.get("id")) == selected_group_id) if selected_group_id is not None else False
+        except (ValueError, TypeError):
+            is_sel = False
+        g["is_selected"] = is_sel
+        if is_sel:
+            current_group_name = g.get("name")
+
     return render(request, "pages/schedule.html", {
         "groups": groups_data or [],
         "days_data": days_data,
         "has_lessons": bool(lessons),
         "current_week": week_label,
         "current_source": current_source,
+        "selected_group_id": selected_group_id,
+        "selected_teacher_id": selected_teacher_id,
+        "current_group_name": current_group_name,
         "error": error,
     })
 
