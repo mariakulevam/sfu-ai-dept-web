@@ -2,9 +2,26 @@
 
 {% block title %}Чаты{% endblock %}
 
+{% block extra_head %}
+<style>
+.chat-list { display: flex; flex-direction: column; border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-surface); }
+.chat-row { display: flex; align-items: center; gap: 14px; padding: 14px 18px; text-decoration: none; color: inherit; border-bottom: 1px solid var(--color-border); transition: background var(--duration-fast) var(--ease); }
+.chat-row:last-child { border-bottom: none; }
+.chat-row:hover { background: var(--color-surface-soft); }
+.chat-row__avatar { width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0; background: var(--ikit-gradient); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px; background-size: cover; background-position: center; }
+.chat-row__main { flex: 1; min-width: 0; }
+.chat-row__top { display: flex; align-items: center; gap: 8px; }
+.chat-row__name { font-weight: 600; font-size: 15px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-row__time { margin-left: auto; font-size: 12px; color: var(--color-text-muted); flex-shrink: 0; }
+.chat-row__preview { font-size: 13px; color: var(--color-text-muted); margin: 3px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-row__unread { flex-shrink: 0; min-width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); display: none; }
+.chat-row__unread.show { display: inline-block; }
+</style>
+{% endblock %}
+
 {% block content %}
 <section class="section">
-    <div class="container">
+    <div class="container container--narrow">
         <nav class="crumbs">
             <a href="{% url 'home' %}">Главная</a>
             <span class="crumbs__sep">/</span>
@@ -25,43 +42,25 @@
         {% endif %}
 
         {% if chats %}
-            <div class="grid grid--2">
+            <div class="chat-list">
                 {% for chat in chats %}
-                    <a href="{% url 'chat_room' chat.id %}" class="card chat-card" style="text-decoration: none; color: inherit;">
-                        <div class="card__body" style="display: flex; align-items: center; gap: 16px;">
-                            <span class="chat-card__avatar"
-                                  {% if chat.display_avatar %}style="background-image: url('{{ chat.display_avatar }}'); background-size: cover; background-position: center;"{% endif %}>
-                                {% if not chat.display_avatar %}{{ chat.display_initials }}{% endif %}
+                    <a href="{% url 'chat_room' chat.id %}" class="chat-row" data-chat-id="{{ chat.id }}" data-last-msg="{{ chat.last_msg_id }}">
+                        <span class="chat-row__avatar"
+                              {% if chat.display_avatar %}style="background-image: url('{{ chat.display_avatar }}');"{% endif %}>
+                            {% if not chat.display_avatar %}{{ chat.display_initials }}{% endif %}
+                        </span>
+                        <span class="chat-row__main">
+                            <span class="chat-row__top">
+                                <h3 class="chat-row__name">{{ chat.display_name }}</h3>
+                                {% if chat.is_group %}<span class="badge badge--blue">группа</span>{% endif %}
+                                {% if chat.last_time %}<span class="chat-row__time">{{ chat.last_time|date:"d.m H:i" }}</span>{% endif %}
                             </span>
-                            <span style="flex: 1; min-width: 0;">
-                                <span style="display: flex; align-items: center; gap: 8px;">
-                                    <h3 class="card__title" style="margin: 0;">{{ chat.display_name }}</h3>
-                                    {% if chat.is_group %}
-                                        <span class="badge badge--blue">группа</span>
-                                    {% endif %}
-                                </span>
-                                <p class="card__text" style="margin: 4px 0 0;">
-                                    {% if chat.is_group %}
-                                        Участников: {{ chat.members|length }}
-                                    {% else %}
-                                        {{ chat.display_role|default:"Личная переписка" }}
-                                    {% endif %}
-                                </p>
-                            </span>
-                        </div>
+                            <p class="chat-row__preview">{{ chat.last_preview }}</p>
+                        </span>
+                        <span class="chat-row__unread" data-unread-for="{{ chat.id }}"></span>
                     </a>
                 {% endfor %}
             </div>
-            <style>
-            .chat-card__avatar {
-                width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
-                background: var(--ikit-gradient); color: #fff;
-                display: inline-flex; align-items: center; justify-content: center;
-                font-weight: 700; font-size: 17px;
-            }
-            .chat-card { transition: transform 0.15s, box-shadow 0.15s; }
-            .chat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-            </style>
         {% else %}
             <div class="empty-state">
                 <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -75,4 +74,20 @@
         {% endif %}
     </div>
 </section>
+
+<script>
+// Бейдж непрочитанных: сравниваем id последнего сообщения чата с тем,
+// что пользователь видел в прошлый раз (сохранено в localStorage при входе в чат).
+(function () {
+    document.querySelectorAll('.chat-row').forEach(function (row) {
+        var chatId = row.getAttribute('data-chat-id');
+        var lastMsg = parseInt(row.getAttribute('data-last-msg') || '0', 10);
+        var seen = parseInt(localStorage.getItem('chat_read_' + chatId) || '0', 10);
+        if (lastMsg > seen && lastMsg > 0) {
+            var dot = row.querySelector('.chat-row__unread');
+            if (dot) dot.classList.add('show');
+        }
+    });
+})();
+</script>
 {% endblock %}

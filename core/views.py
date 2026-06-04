@@ -1376,15 +1376,39 @@ def chat_start_direct(request, user_id: int):
 
 @login_required_view
 def chats_page(request):
-    """Список чатов с именами и аватарами собеседников."""
+    """Список чатов с именами, аватарами, превью последнего сообщения."""
     token = _get_token(request)
     me = _get_user(request) or {}
     my_id = me.get("id")
     chats, error = _safe_call(request, api.list_chats, token)
 
     enriched = []
+    seen_ids = set()
     for c in chats or []:
+        cid = c.get("id")
+        if cid in seen_ids:        # дедупликация чатов по id
+            continue
+        seen_ids.add(cid)
+
         item = {**c}
+
+        # --- последнее сообщение (превью + время) ---
+        msgs, _ = _safe_call(request, api.chat_messages, token, cid, limit=30)
+        last = None
+        if msgs:
+            # самое свежее по времени
+            last = max(msgs, key=lambda m: m.get("created_at") or "")
+        if last:
+            body = (last.get("body") or "").strip().replace("\n", " ")
+            prefix = "Вы: " if _same_id(last.get("sender_id") or last.get("user_id"), my_id) else ""
+            item["last_preview"] = prefix + (body[:60] + "…" if len(body) > 60 else body)
+            item["last_time"] = last.get("created_at")
+            item["last_msg_id"] = last.get("id")
+        else:
+            item["last_preview"] = "Нет сообщений"
+            item["last_time"] = None
+            item["last_msg_id"] = 0
+
         if c.get("type") == "group":
             item["display_name"] = c.get("name") or f"Группа {c.get('group_id', '')}".strip()
             item["display_avatar"] = None
@@ -1399,15 +1423,8 @@ def chats_page(request):
                 if mid is not None and not _same_id(mid, my_id):
                     other_id = mid
                     break
-            # Если собеседник не нашёлся в members — пробуем достать из истории
-            # сообщений (по sender_id, который не равен нам).
+            # Фолбэк: из истории сообщений по sender_id
             if other_id is None:
-                if not members:
-                    _logger.warning(
-                        "CHATS: личный чат id=%s без members. Ключи чата: %s",
-                        c.get("id"), list(c.keys()),
-                    )
-                msgs, _ = _safe_call(request, api.chat_messages, token, c.get("id"), limit=20)
                 for msg in msgs or []:
                     sid = msg.get("sender_id") or msg.get("user_id")
                     if sid is not None and not _same_id(sid, my_id):
@@ -1421,7 +1438,6 @@ def chats_page(request):
                     item["display_initials"] = api.make_initials(u_data)
                     item["display_role"] = api.ROLE_LABELS.get(u_data.get("role"), "")
                 else:
-                    _logger.warning("CHATS: get_user(%s) вернул пусто", other_id)
                     item["display_name"] = "Собеседник"
                     item["display_initials"] = "?"
             else:
@@ -1429,6 +1445,9 @@ def chats_page(request):
                 item["display_initials"] = "?"
             item["is_group"] = False
         enriched.append(item)
+
+    # Сортируем чаты по времени последнего сообщения (свежие сверху)
+    enriched.sort(key=lambda x: x.get("last_time") or "", reverse=True)
 
     return render(request, "pages/chats.html", {
         "chats": enriched,
@@ -1494,16 +1513,38 @@ def chat_room_page(request, chat_id: int):
         chat_title = (chat_obj or {}).get("name") or "Групповой чат"
         chat_initials = "ГР"
 
+    # Дополняем карту имён всеми отправителями из истории (для групповых
+    # чатов и случаев, когда участник не попал в member_ids).
+    for msg in messages or []:
+        sid = msg.get("sender_id") or msg.get("user_id")
+        if sid is None or sid in names:
+            continue
+        if _same_id(sid, user.get("id")):
+            names[sid] = "Вы"
+        else:
+            u_data, _ = _safe_call(request, api.get_user, token, sid)
+            names[sid] = (api.short_name(u_data) if u_data else None) or f"Пользователь #{sid}"
+
+    # Проставляем каждому сообщению готовое имя отправителя и флаг "моё"
+    enriched_messages = []
+    for msg in messages or []:
+        sid = msg.get("sender_id") or msg.get("user_id")
+        m = {**msg}
+        m["is_mine"] = _same_id(sid, user.get("id"))
+        m["sender_name"] = "Вы" if m["is_mine"] else names.get(sid, f"Пользователь #{sid}")
+        enriched_messages.append(m)
+
     import json as _json
     return render(request, "pages/chat_room.html", {
         "chat_id": chat_id,
-        "messages": messages or [],
+        "messages": enriched_messages,
         "user": user,
         "ws_url": api.get_chat_ws_url(chat_id, token),
         "names_json": _json.dumps(names, ensure_ascii=False),
         "chat_title": chat_title,
         "chat_avatar": chat_avatar,
         "chat_initials": chat_initials,
+        "is_group": is_group,
         "error": error,
     })
 

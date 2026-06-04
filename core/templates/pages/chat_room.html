@@ -54,7 +54,7 @@
                     </span>
                     <div>
                         <h3 style="margin: 0; font-size: 16px;">{{ chat_title }}</h3>
-                        <div class="chat-room__status" id="ws-status">
+                        <div class="chat-room__status" id="ws-status" title="Состояние подключения к чату">
                             <span class="chat-room__status-dot"></span>
                             <span class="chat-room__status-text">Подключение…</span>
                         </div>
@@ -65,10 +65,8 @@
 
             <div class="chat-room__messages" id="messages">
                 {% for msg in messages %}
-                    <div class="chat-msg {% if msg.sender_id == user.id %}chat-msg--out{% else %}chat-msg--in{% endif %}">
-                        <div class="chat-msg__sender">
-                            {% if msg.sender_id == user.id %}Вы{% else %}Собеседник{% endif %}
-                        </div>
+                    <div class="chat-msg {% if msg.is_mine %}chat-msg--out{% else %}chat-msg--in{% endif %}" data-msg-id="{{ msg.id }}">
+                        <div class="chat-msg__sender">{{ msg.sender_name }}</div>
                         <div class="chat-msg__body">{{ msg.body }}</div>
                         <div class="chat-msg__time">{{ msg.created_at|date:"H:i, d.m.Y" }}</div>
                     </div>
@@ -109,11 +107,11 @@
         statusDot.classList.remove('online', 'offline');
         if (state === 'online') {
             statusDot.classList.add('online');
-            statusText.textContent = 'В сети';
+            statusText.textContent = 'Подключено';
             sendBtn.disabled = false;
         } else if (state === 'offline') {
             statusDot.classList.add('offline');
-            statusText.textContent = 'Нет подключения';
+            statusText.textContent = 'Связь потеряна — переподключение…';
             sendBtn.disabled = true;
         } else {
             statusText.textContent = 'Подключение…';
@@ -121,10 +119,24 @@
         }
     }
 
+    // Запоминаем id последнего показанного сообщения, чтобы отметить чат
+    // прочитанным (для бейджа непрочитанных в списке чатов).
+    function markRead(msgId) {
+        if (!msgId) return;
+        var key = 'chat_read_{{ chat_id }}';
+        var prev = parseInt(localStorage.getItem(key) || '0', 10);
+        if (msgId > prev) localStorage.setItem(key, String(msgId));
+    }
+
     function appendMessage(msg) {
+        // Защита от дублей: если сообщение с таким id уже есть — пропускаем
+        if (msg.id && messagesEl.querySelector('[data-msg-id="' + msg.id + '"]')) {
+            return;
+        }
         const isOut = msg.sender_id === myUserId;
         const div = document.createElement('div');
         div.className = 'chat-msg ' + (isOut ? 'chat-msg--out' : 'chat-msg--in');
+        if (msg.id) div.setAttribute('data-msg-id', msg.id);
         const time = new Date(msg.created_at);
         const timeStr = time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const senderName = isOut ? 'Вы' : (userNames[msg.sender_id] || ('Пользователь #' + msg.sender_id));
@@ -136,6 +148,7 @@
         div.querySelector('.chat-msg__body').textContent = msg.body;
         messagesEl.appendChild(div);
         messagesEl.scrollTop = messagesEl.scrollHeight;
+        markRead(msg.id);
     }
 
     function connect() {
@@ -180,6 +193,15 @@
 
     // Прокрутка вниз при загрузке
     messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    // Отмечаем последнее сообщение истории прочитанным (гасит бейдж в списке)
+    (function () {
+        var rows = messagesEl.querySelectorAll('[data-msg-id]');
+        if (rows.length) {
+            var lastId = parseInt(rows[rows.length - 1].getAttribute('data-msg-id') || '0', 10);
+            markRead(lastId);
+        }
+    })();
 
     // Запуск
     connect();
