@@ -661,16 +661,21 @@ def delete_event(token: str, event_id: int) -> None:
     _handle(response)
 
 
-def upload_event_image(token: str, event_id: int, file_path: str) -> Dict[str, Any]:
-    """POST /events/{id}/image — загрузить картинку."""
-    with open(file_path, "rb") as fh:
-        files = {"file": (file_path.split("/")[-1], fh, "image/jpeg")}
-        response = requests.post(
-            _url(f"/events/{event_id}/image"),
-            headers=_headers(token),  # без Content-Type — пусть выставит requests
-            files=files,
-            timeout=TIMEOUT * 2,
-        )
+def upload_event_image(token: str, event_id: int, file_obj,
+                       filename: str = "image.jpg",
+                       content_type: str = "image/jpeg") -> Dict[str, Any]:
+    """POST /events/{id}/image — загрузить картинку.
+
+    file_obj — файлоподобный объект (например, request.FILES['image']
+    из Django). Не закрываем его здесь: Django управляет жизненным циклом.
+    """
+    files = {"file": (filename, file_obj, content_type or "image/jpeg")}
+    response = requests.post(
+        _url(f"/events/{event_id}/image"),
+        headers=_headers(token),  # без Content-Type — requests выставит boundary
+        files=files,
+        timeout=TIMEOUT * 2,
+    )
     return _handle(response)
 
 

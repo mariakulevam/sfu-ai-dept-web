@@ -16,7 +16,7 @@
         <div class="section-header">
             <h1 class="section-title">{{ form_title|default:"Новое событие" }}</h1>
             <p class="section-subtitle">
-                Конференция, защита, открытая лекция или дни открытых дверей. Фотографию можно прикрепить после создания</p>
+                Конференция, защита, открытая лекция или дни открытых дверей. Фотографию можно прикрепить прямо здесь</p>
         </div>
 
         {% if error %}
@@ -30,7 +30,7 @@
             </div>
         {% endif %}
 
-        <form method="post" class="card">
+        <form method="post" class="card" enctype="multipart/form-data">
             <div class="card__body">
                 {% csrf_token %}
 
@@ -43,6 +43,18 @@
                 <div class="field">
                     <label class="field__label" for="annotation">Описание</label>
                     <textarea class="input" id="annotation" name="annotation" rows="5">{{ form.annotation|default:'' }}</textarea>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="image">Фотография события</label>
+                    {% if current_image %}
+                        <img src="{{ current_image }}" alt="Текущая фотография"
+                             onerror="this.style.display='none'"
+                             style="display:block; max-width: 280px; width: 100%; border-radius: var(--radius-md); margin-bottom: 10px;">
+                    {% endif %}
+                    <input class="input" type="file" id="image" name="image" accept="image/*">
+                    <p style="font-size: 13px; color: var(--color-text-muted); margin: 6px 0 0;">
+                        JPG или PNG. {% if is_edit %}Загрузите новый файл, чтобы заменить текущую фотографию.{% else %}Можно прикрепить сразу при создании.{% endif %}</p>
                 </div>
 
                 <div class="grid grid--2">

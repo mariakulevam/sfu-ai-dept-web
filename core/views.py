@@ -199,11 +199,21 @@ def _safe_call(request_or_fn, *args, **kwargs):
 
 
 def _make_image_full_url(item: Dict[str, Any]) -> Dict[str, Any]:
-    """Дополняет item полем image_full_url, если есть image_url."""
+    """Дополняет событие полем image_full_url для <img src=...>.
+
+    Картинку нужно отдавать по ПУБЛИЧНОМУ адресу (FASTAPI_PUBLIC_URL),
+    т.к. её грузит браузер, а не сервер. Если API вернул image_url —
+    используем его, иначе пробуем стандартный эндпоинт картинки события
+    (в шаблоне <img onerror> скроет картинку, если её нет).
+    """
+    public = getattr(settings, "FASTAPI_PUBLIC_URL", settings.FASTAPI_ROOT_URL)
     img = item.get("image_url")
-    item["image_full_url"] = (
-        f"{settings.FASTAPI_ROOT_URL}{img}" if img else None
-    )
+    if img:
+        item["image_full_url"] = img if str(img).startswith("http") else f"{public}{img}"
+    elif item.get("id") is not None:
+        item["image_full_url"] = api.get_event_image_url(item["id"])
+    else:
+        item["image_full_url"] = None
     return item
 
 
@@ -956,6 +966,11 @@ def event_create_page(request):
             if err:
                 error = err
             elif created:
+                image = request.FILES.get("image")
+                ev_id = created.get("id") if isinstance(created, dict) else None
+                if image and ev_id:
+                    _safe_call(request, api.upload_event_image, token, ev_id,
+                               image, image.name, image.content_type)
                 return redirect("events")
 
     return render(request, "pages/event_form.html", {
@@ -1006,6 +1021,10 @@ def event_edit_page(request, event_id: int):
             if err:
                 error = err
             elif updated:
+                image = request.FILES.get("image")
+                if image:
+                    _safe_call(request, api.upload_event_image, token, event_id,
+                               image, image.name, image.content_type)
                 return redirect("events")
         event = {**event, "title": title, "annotation": annotation,
                  "starts_at": starts_at, "ends_at": ends_at, "room_id": room_id}
@@ -1024,6 +1043,7 @@ def event_edit_page(request, event_id: int):
         "submit_label": "Сохранить",
         "is_edit": True,
         "event_id": event_id,
+        "current_image": api.get_event_image_url(event_id),
     })
 
 
