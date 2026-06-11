@@ -1283,14 +1283,21 @@ def attendance_page(request):
 
     reports: List[Dict[str, Any]] = []
     error: Optional[str] = None
+    teacher_lessons: List[Dict[str, Any]] = []
+    selected_lesson_id: Optional[int] = None
 
     if role == "student" and user.get("id"):
         reports, error = _safe_call(request, api.student_attendance, token, user["id"])
     elif role in {"teacher", "headman", "admin"}:
-        # Преподаватель смотрит посещаемость по конкретному занятию
+        # Преподавателю даём выбрать своё занятие, по которому смотреть журнал
+        # и генерировать QR-код.
+        if user.get("id"):
+            teacher_lessons, _ = _safe_call(request, api.lessons_by_teacher, token, user["id"])
+            teacher_lessons = teacher_lessons or []
         lesson_id_param = request.GET.get("lesson_id")
         if lesson_id_param and lesson_id_param.isdigit():
-            reports, error = _safe_call(request, api.lesson_attendance, token, int(lesson_id_param))
+            selected_lesson_id = int(lesson_id_param)
+            reports, error = _safe_call(request, api.lesson_attendance, token, selected_lesson_id)
     reports = reports or []
 
     # Сводная статистика для KPI-карточек
@@ -1312,6 +1319,8 @@ def attendance_page(request):
         "stats": stats,
         "user_role": role,
         "can_generate_qr": api.can_manage_attendance(role),
+        "teacher_lessons": teacher_lessons,
+        "selected_lesson_id": selected_lesson_id,
         "error": error,
     })
 
