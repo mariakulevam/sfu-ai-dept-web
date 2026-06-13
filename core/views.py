@@ -31,6 +31,27 @@ def _get_token(request) -> Optional[str]:
     return request.session.get("access_token")
 
 
+def event_image_proxy(request, event_id: int):
+    """Прокси картинки события: браузер не может приложить токен к <img>,
+    поэтому картинку забирает Django (с токеном) и отдаёт браузеру.
+
+    Это укладывается в архитектуру BFF: фронт выступает посредником к API.
+    """
+    token = _get_token(request)
+    url = f"{settings.FASTAPI_ROOT_URL}/api/v1/events/{event_id}/image"
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    try:
+        upstream = requests.get(url, headers=headers, timeout=15, stream=True)
+    except requests.RequestException:
+        raise Http404("image unavailable")
+    if upstream.status_code != 200:
+        raise Http404("no image")
+    content_type = upstream.headers.get("Content-Type", "image/jpeg")
+    resp = HttpResponse(upstream.content, content_type=content_type)
+    resp["Cache-Control"] = "public, max-age=300"  # кэш на 5 минут
+    return resp
+
+
 def _member_user_id(member: Any) -> Optional[Any]:
     """Достаёт id пользователя из элемента members при разных форматах ответа API.
 
@@ -201,17 +222,14 @@ def _safe_call(request_or_fn, *args, **kwargs):
 def _make_image_full_url(item: Dict[str, Any]) -> Dict[str, Any]:
     """Дополняет событие полем image_full_url для <img src=...>.
 
-    Картинку нужно отдавать по ПУБЛИЧНОМУ адресу (FASTAPI_PUBLIC_URL),
-    т.к. её грузит браузер, а не сервер. Если API вернул image_url —
-    используем его, иначе пробуем стандартный эндпоинт картинки события
-    (в шаблоне <img onerror> скроет картинку, если её нет).
+    Картинка на бэке требует авторизацию, а тег <img> не может приложить
+    токен. Поэтому ведём адрес на наш Django-прокси /events/{id}/image/,
+    который заберёт картинку с токеном и отдаст браузеру. Если у события
+    нет картинки (image_url пуст и нет id) — ставим None.
     """
-    public = getattr(settings, "FASTAPI_PUBLIC_URL", settings.FASTAPI_ROOT_URL)
-    img = item.get("image_url")
-    if img:
-        item["image_full_url"] = img if str(img).startswith("http") else f"{public}{img}"
-    elif item.get("id") is not None:
-        item["image_full_url"] = api.get_event_image_url(item["id"])
+    if item.get("image_url") and item.get("id") is not None:
+        # есть загруженная картинка — отдаём через наш прокси
+        item["image_full_url"] = reverse("event_image", args=[item["id"]])
     else:
         item["image_full_url"] = None
     return item
@@ -1043,7 +1061,7 @@ def event_edit_page(request, event_id: int):
         "submit_label": "Сохранить",
         "is_edit": True,
         "event_id": event_id,
-        "current_image": api.get_event_image_url(event_id),
+        "current_image": reverse("event_image", args=[event_id]),
     })
 
 
@@ -1283,21 +1301,14 @@ def attendance_page(request):
 
     reports: List[Dict[str, Any]] = []
     error: Optional[str] = None
-    teacher_lessons: List[Dict[str, Any]] = []
-    selected_lesson_id: Optional[int] = None
 
     if role == "student" and user.get("id"):
         reports, error = _safe_call(request, api.student_attendance, token, user["id"])
     elif role in {"teacher", "headman", "admin"}:
-        # Преподавателю даём выбрать своё занятие, по которому смотреть журнал
-        # и генерировать QR-код.
-        if user.get("id"):
-            teacher_lessons, _ = _safe_call(request, api.lessons_by_teacher, token, user["id"])
-            teacher_lessons = teacher_lessons or []
+        # Преподаватель смотрит посещаемость по конкретному занятию
         lesson_id_param = request.GET.get("lesson_id")
         if lesson_id_param and lesson_id_param.isdigit():
-            selected_lesson_id = int(lesson_id_param)
-            reports, error = _safe_call(request, api.lesson_attendance, token, selected_lesson_id)
+            reports, error = _safe_call(request, api.lesson_attendance, token, int(lesson_id_param))
     reports = reports or []
 
     # Сводная статистика для KPI-карточек
@@ -1319,8 +1330,6 @@ def attendance_page(request):
         "stats": stats,
         "user_role": role,
         "can_generate_qr": api.can_manage_attendance(role),
-        "teacher_lessons": teacher_lessons,
-        "selected_lesson_id": selected_lesson_id,
         "error": error,
     })
 

@@ -28,6 +28,7 @@ urlpatterns = [
     path("events/", views.events_page, name="events"),
     path("events/new/", views.event_create_page, name="event_new"),
     path("events/<int:event_id>/edit/", views.event_edit_page, name="event_edit"),
+    path("events/<int:event_id>/image/", views.event_image_proxy, name="event_image"),
     path("events/<int:event_id>/delete/", views.event_delete, name="event_delete"),
 
     # Документы и расписание
