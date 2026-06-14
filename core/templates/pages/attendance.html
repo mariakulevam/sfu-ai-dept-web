@@ -27,6 +27,43 @@
             <div class="alert alert--warning" style="margin-bottom: 24px;">{{ error }}</div>
         {% endif %}
 
+        {% if can_generate_qr %}
+            <div class="card" style="margin-bottom: 28px;">
+                <div class="card__body">
+                    <h3 style="margin: 0 0 4px; font-size: 17px;">Отметка студентов по QR-коду</h3>
+                    <p class="text-muted" style="font-size: 14px; margin: 0 0 16px;">
+                        Выберите занятие, посмотрите журнал и сгенерируйте QR-код, который студенты отсканируют для отметки.</p>
+
+                    {% if teacher_lessons %}
+                        <form method="get" action="{% url 'attendance' %}"
+                              style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                            <div class="field" style="flex: 1; min-width: 280px; margin: 0;">
+                                <label class="field__label" for="lesson_id">Занятие</label>
+                                <select class="input" id="lesson_id" name="lesson_id" onchange="this.form.submit()">
+                                    <option value="">— выберите занятие —</option>
+                                    {% for lesson in teacher_lessons %}
+                                        <option value="{{ lesson.id }}"
+                                            {% if lesson.id == selected_lesson_id %}selected{% endif %}>
+                                            {{ lesson.subject }}{% if lesson.time_start %} · {{ lesson.time_start }}–{{ lesson.time_end }}{% endif %}{% if lesson.room %} · ауд. {{ lesson.room }}{% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if selected_lesson_id %}
+                                <a href="{% url 'attendance_qr' selected_lesson_id %}"
+                                   class="btn btn--primary" style="white-space: nowrap;">
+                                    Сгенерировать QR-код
+                                </a>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                        <p class="text-muted" style="font-size: 14px; margin: 0;">
+                            У вас пока нет занятий в расписании, по которым можно отметить посещаемость.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
         {% if reports %}
             <!-- KPI -->
             <div class="grid grid--3" style="margin-bottom: 32px;">
