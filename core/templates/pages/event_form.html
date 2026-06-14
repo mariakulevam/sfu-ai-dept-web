@@ -47,14 +47,67 @@
 
                 <div class="field">
                     <label class="field__label" for="image">Фотография события</label>
+
                     {% if current_image %}
-                        <img src="{{ current_image }}" alt="Текущая фотография"
-                             onerror="this.style.display='none'"
-                             style="display:block; max-width: 280px; width: 100%; border-radius: var(--radius-md); margin-bottom: 10px;">
+                        <div id="currentImageBlock" style="margin-bottom: 10px;">
+                            <img src="{{ current_image }}" alt="Текущая фотография"
+                                 onerror="this.parentElement.style.display='none'"
+                                 style="display:block; max-width: 280px; width: 100%; border-radius: var(--radius-md); margin-bottom: 6px;">
+                            <span style="font-size: 13px; color: var(--color-text-muted);">Текущая фотография</span>
+                        </div>
                     {% endif %}
+
+                    <!-- превью только что выбранного файла -->
+                    <div id="imagePreviewBlock" style="display:none; margin-bottom: 10px;">
+                        <img id="imagePreview" alt="Предпросмотр"
+                             style="display:block; max-width: 280px; width: 100%; border-radius: var(--radius-md); margin-bottom: 6px;">
+                        <span style="font-size: 13px; color: var(--color-text-muted);">Новая фотография — заменит текущую при сохранении</span>
+                    </div>
+
                     <input class="input" type="file" id="image" name="image" accept="image/*">
-                    <p style="font-size: 13px; color: var(--color-text-muted); margin: 6px 0 0;">
+
+                    <div style="margin-top: 8px;">
+                        <button type="button" id="clearImageBtn" class="btn btn--ghost"
+                                style="display:none; font-size: 13px; padding: 6px 14px;">
+                            Убрать выбранную фотографию
+                        </button>
+                    </div>
+
+                    <p style="font-size: 13px; color: var(--color-text-muted); margin: 8px 0 0;">
                         JPG или PNG. {% if is_edit %}Загрузите новый файл, чтобы заменить текущую фотографию.{% else %}Можно прикрепить сразу при создании.{% endif %}</p>
+
+                    <script>
+                    (function () {
+                        var input = document.getElementById('image');
+                        var previewBlock = document.getElementById('imagePreviewBlock');
+                        var preview = document.getElementById('imagePreview');
+                        var clearBtn = document.getElementById('clearImageBtn');
+                        if (!input) return;
+
+                        input.addEventListener('change', function () {
+                            var file = input.files && input.files[0];
+                            if (file) {
+                                var reader = new FileReader();
+                                reader.onload = function (e) {
+                                    preview.src = e.target.result;
+                                    previewBlock.style.display = 'block';
+                                };
+                                reader.readAsDataURL(file);
+                                clearBtn.style.display = 'inline-block';
+                            } else {
+                                previewBlock.style.display = 'none';
+                                clearBtn.style.display = 'none';
+                            }
+                        });
+
+                        clearBtn.addEventListener('click', function () {
+                            input.value = '';                    // сбрасываем выбор файла
+                            previewBlock.style.display = 'none';
+                            preview.src = '';
+                            clearBtn.style.display = 'none';
+                        });
+                    })();
+                    </script>
                 </div>
 
                 <div class="grid grid--2">

@@ -33,9 +33,7 @@ def _get_token(request) -> Optional[str]:
 
 def event_image_proxy(request, event_id: int):
     """Прокси картинки события: браузер не может приложить токен к <img>,
-    поэтому изображение забирает Django (с токеном) и отдаёт браузеру.
-    Укладывается в архитектуру BFF — фронт как посредник к API.
-    """
+    поэтому изображение забирает Django (с токеном) и отдаёт браузеру."""
     token = _get_token(request)
     url = f"{settings.FASTAPI_ROOT_URL}/api/v1/events/{event_id}/image"
     headers = {"Authorization": f"Bearer {token}"} if token else {}
@@ -221,10 +219,10 @@ def _safe_call(request_or_fn, *args, **kwargs):
 def _make_image_full_url(item: Dict[str, Any]) -> Dict[str, Any]:
     """Дополняет событие полем image_full_url для <img src=...>.
 
-    Картинка на бэке требует авторизацию, а тег <img> не может приложить
-    токен. Поэтому ведём адрес на наш Django-прокси /events/{id}/image/,
-    который заберёт картинку с токеном и отдаст браузеру. Если картинки
-    нет — ставим None, и шаблон покажет заглушку без битого значка.
+    Картинку нужно отдавать по ПУБЛИЧНОМУ адресу (FASTAPI_PUBLIC_URL),
+    т.к. её грузит браузер, а не сервер. Если API вернул image_url —
+    используем его, иначе пробуем стандартный эндпоинт картинки события
+    (в шаблоне <img onerror> скроет картинку, если её нет).
     """
     if item.get("image_url") and item.get("id") is not None:
         item["image_full_url"] = reverse("event_image", args=[item["id"]])
@@ -1305,8 +1303,6 @@ def attendance_page(request):
     if role == "student" and user.get("id"):
         reports, error = _safe_call(request, api.student_attendance, token, user["id"])
     elif role in {"teacher", "headman", "admin"}:
-        # Преподавателю даём выбрать своё занятие — по нему смотрим журнал
-        # и генерируем QR-код для отметки студентов.
         if user.get("id"):
             teacher_lessons, _ = _safe_call(request, api.lessons_by_teacher, token, user["id"])
             teacher_lessons = teacher_lessons or []
